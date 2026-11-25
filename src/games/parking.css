@@ -1,14 +1,1 @@
-#game.th-parking{background:radial-gradient(120% 80% at 50% 40%,#5a616b,#2f343b)}
-#game.th-parking .bar h1{color:#fff}
-.lot{position:relative;flex:none;border-radius:20px;background:#454b54;border:4px solid #ffd23f;box-shadow:0 0 0 4px #1b1b1f,0 14px 30px rgba(0,0,0,.45),inset 0 0 40px rgba(0,0,0,.35)}
-.lot .lines{position:absolute;inset:8px;background-image:linear-gradient(rgba(255,255,255,.16) 2px,transparent 2px),linear-gradient(90deg,rgba(255,255,255,.16) 2px,transparent 2px);background-size:var(--cs) var(--cs);border-radius:6px}
-.car{position:absolute;border:0;background:none;padding:0;cursor:pointer;z-index:1}
-.car svg{position:absolute;left:50%;top:50%;width:var(--w);height:var(--h);transform:translate(-50%,-50%) rotate(var(--rot));overflow:visible;transition:filter .15s}
-.car:active svg{filter:brightness(1.15)}
-.car[data-moving]{z-index:5}
-.car.shake svg{animation:carShake .35s}
-@keyframes carShake{20%{margin-left:-4px}40%{margin-left:4px}60%{margin-left:-3px}80%{margin-left:2px}}
-.car.nudge svg{animation:carNudge .35s}
-@keyframes carNudge{30%{margin-top:-3px;margin-left:3px}60%{margin-top:2px;margin-left:-2px}}
-.car.glow svg{animation:carGlow .5s 3}
-@keyframes carGlow{50%{filter:brightness(1.4) drop-shadow(0 0 8px #fff)}}
+#game.th-parking{background:linear-gradient(#bfe3ff,#e8f3ea 55%,#a7b0a7)}

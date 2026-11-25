@@ -1,5 +1,5 @@
-#game.th-findcat{background:linear-gradient(#e9d6b2,#cfae7c);--ink:#2b1d0e}
-.fc{align-self:stretch;width:100%;height:100%;min-height:0;overflow:auto;border:4px solid #3b2616;border-radius:16px;touch-action:pan-x pan-y;background:#5e4130;display:flex;box-shadow:0 12px 26px rgba(0,0,0,.35)}
+#game.th-findcat{background:linear-gradient(#e9d6b2,#cfae7c)}
+.fc{overflow:hidden;flex:none;border:4px solid #3b2616;border-radius:16px;touch-action:manipulation;background:#5e4130;display:flex;box-shadow:0 12px 26px rgba(0,0,0,.35)}
 .fc svg{display:block;margin:auto;flex:none}
 .fc .blink{transform-box:fill-box;transform-origin:center;animation:blink 5s infinite}
 @keyframes blink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}

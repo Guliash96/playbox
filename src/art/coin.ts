@@ -16,17 +16,19 @@ export function ensureCoinDefs() {
 }
 
 /** one stack; coins[] bottom→top values. Returns inner SVG for a 60-wide viewBox, height H */
-export function coinStack(coins: number[], H: number, liftFrom = Infinity) {
+export const COIN_T = 7.5, COIN_RY = 8;
+export function coinStack(coins: number[], H: number, liftFrom = Infinity, hideFrom = Infinity, dropFrom = Infinity) {
   const rx = 25, ry = 8, t = 7.5, base = H - ry - 4;
   let s = '';
   coins.forEach((v, i) => {
     const k = ((v - 1) % METALS.length) + 1, lift = i >= liftFrom ? -12 : 0, cy = base - i * t + lift;
-    s += `<g class="coin">
+    const st = i >= hideFrom ? ' style="visibility:hidden"' : i >= dropFrom ? ` style="animation-delay:${(i - dropFrom) * 55}ms"` : '';
+    s += `<g class="coin${i >= dropFrom && i < hideFrom ? ' drop' : ''}"${st}>
       <path d="M${30 - rx} ${cy} v${t} a${rx} ${ry} 0 0 0 ${2 * rx} 0 v${-t}z" fill="url(#cs${k})"/>
       <path d="M${30 - rx} ${cy + t * .5} a${rx} ${ry} 0 0 0 ${2 * rx} 0" fill="none" stroke="#000" stroke-opacity=".18" stroke-dasharray="2 2"/>
       <ellipse cx="30" cy="${cy}" rx="${rx}" ry="${ry}" fill="url(#ct${k})" stroke="#000" stroke-opacity=".25"/>
       <ellipse cx="30" cy="${cy}" rx="${rx - 5}" ry="${ry - 2.2}" fill="none" stroke="#fff" stroke-opacity=".5"/>
-      ${i === coins.length - 1 || coins[i + 1] !== v || i + 1 === liftFrom ? `<text x="30" y="${cy + 3.6}" text-anchor="middle" font-size="11" font-weight="700" font-family="Fredoka" fill="#2b1d0e" fill-opacity=".85">${v}</text>` : ''}
+      ${i === coins.length - 1 || coins[i + 1] !== v || i + 1 === liftFrom || i + 1 === hideFrom ? `<text x="30" y="${cy + 3.6}" text-anchor="middle" font-size="11" font-weight="700" font-family="Fredoka" fill="#2b1d0e" fill-opacity=".85">${v}</text>` : ''}
     </g>`;
   });
   return s;

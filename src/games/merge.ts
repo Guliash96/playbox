@@ -6,7 +6,7 @@ import { store } from '../core/store';
 import { haptic } from '../core/platform';
 import { setStats, setTools, modal, toast, pill, flash } from '../core/ui';
 import { Ads } from '../core/ads';
-import { CHAINS, CRATE, harborScene } from '../art/harbor';
+import { CHAINS, CRATE, harborScene, RESTORE } from '../art/harbor';
 import type { Game } from './registry';
 
 const COLS = 7, ROWS = 8, GEN = 3 * COLS + 3, EMAX = 40, EREGEN = 20_000;
@@ -21,7 +21,7 @@ const STORY = [
   'Ринок відкрито! Залишилось влаштувати свято на честь відродження гавані.',
   'Гавань ожила! Свято триває, а замовлення продовжують надходити.',
 ];
-const face = (k: number) => { const f = FOLK[k]; return `<svg viewBox="0 0 40 40"><circle cx="20" cy="22" r="13" fill="${f.skin}" stroke="#1b1b1f" stroke-width="1.5"/><path d="M6 17q14-14 28 0z" fill="${f.hat}" stroke="#1b1b1f" stroke-width="1.5"/><circle cx="15" cy="22" r="1.8" fill="#1b1b1f"/><circle cx="25" cy="22" r="1.8" fill="#1b1b1f"/><path d="M15 28q5 4 10 0" stroke="#1b1b1f" stroke-width="1.5" fill="none"/></svg>`; };
+const face = (k: number) => { const f = FOLK[k]; return `<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="19" fill="#cfe8ff"/><path d="M6 40c0-9 6-13 14-13s14 4 14 13z" fill="${f.hat}" stroke="#1b1b1f" stroke-width="1.2"/><circle cx="20" cy="20" r="10" fill="${f.skin}" stroke="#1b1b1f" stroke-width="1.2"/><path d="M8 16q12-14 24 0z" fill="${f.hat}" stroke="#1b1b1f" stroke-width="1.2"/><circle cx="16" cy="20" r="1.5" fill="#1b1b1f"/><circle cx="24" cy="20" r="1.5" fill="#1b1b1f"/><path d="M16 25q4 3 8 0" stroke="#1b1b1f" stroke-width="1.3" fill="none"/><circle cx="13" cy="23" r="2" fill="#ff9fb4" opacity=".6"/><circle cx="27" cy="23" r="2" fill="#ff9fb4" opacity=".6"/></svg>`; };
 const itemSVG = (it: Item) => it ? `<svg viewBox="0 0 40 40">${CHAINS[it.c].art[it.t]}</svg>` : '';
 
 const Merge: Game & Record<string, any> = {
@@ -53,15 +53,23 @@ const Merge: Game & Record<string, any> = {
   },
   hud() { setStats(`${pill('Енергія ' + this.energy + '/' + EMAX)}${pill('Зірки ' + this.stars + '/' + this.goal())}`); },
   render() {
-    const cs = this.cs = Math.floor(Math.min((this.el.clientWidth - 24) / COLS, (this.el.clientHeight - 230) / ROWS, 58));
+    const cs = this.cs = Math.floor(Math.min((this.el.clientWidth - 24) / COLS, (this.el.clientHeight - 300) / ROWS, 56));
+    const pct = Math.min(100, this.stars / this.goal() * 100);
     this.el.innerHTML = `<div class="mg" style="--cs:${cs}px">
-      <div class="scene">${harborScene(this.ch)}<div class="chbar"><span style="width:${Math.min(100, this.stars / this.goal() * 100)}%"></span><b>Розділ ${this.ch + 1}</b></div></div>
-      <div class="orders">${this.orders.map((o: Order, i: number) => `<div class="order${this.canFill(o) ? ' ready' : ''}" data-o="${i}"><span class="who">${face(o.who)}</span><span class="need">${o.need.map(n => `<span class="ni${this.has(n) ? ' ok' : ''}">${itemSVG(n)}</span>`).join('')}</span><button class="give" data-o="${i}" ${this.canFill(o) ? '' : 'disabled'}>★${o.stars}</button></div>`).join('')}</div>
-      <div class="mboard" style="grid-template-columns:repeat(${COLS},var(--cs))">${this.board.map((it: Item, i: number) => i === GEN ? `<button class="cell gen" data-i="${i}" aria-label="ящик"><svg viewBox="0 0 40 40">${CRATE}</svg><small>−1</small></button>` : `<button class="cell" data-i="${i}">${itemSVG(it)}</button>`).join('')}</div>
-      <div class="info" id="minfo">Тапни ящик, щоб отримати предмет. Перетягни два однакові, щоб злити.</div></div>`;
-    this.el.querySelectorAll('.give').forEach((b: HTMLElement) => b.onclick = () => this.give(+b.dataset.o));
+      <div class="scene">${harborScene(this.ch)}</div>
+        <div class="goal"><span class="gt">Мета: <b>${RESTORE[this.ch]}</b></span><span class="chbar"><span style="width:${pct}%"></span><b>★ ${this.stars} / ${this.goal()}</b></span></div>
+      <div class="orders">${this.orders.map((o: Order, i: number) => { const ok = this.canFill(o); return `
+        <div class="order${ok ? ' ready' : ''}">
+          <div class="otop"><span class="who">${face(o.who)}</span><span class="nm">${FOLK[o.who].n.split(' ')[1] || FOLK[o.who].n}</span></div>
+          <div class="need">${o.need.map(n => `<span class="ni${this.has(n) ? ' ok' : ''}" title="${CHAINS[n.c].tiers[n.t]}">${itemSVG(n)}<i>${n.t + 1}</i></span>`).join('')}</div>
+          <button class="give" data-o="${i}" ${ok ? '' : 'disabled'}>${ok ? 'Здати' : 'Потрібно'} <b>+${o.stars}★</b></button>
+        </div>`; }).join('')}</div>
+      <div class="mboard" style="grid-template-columns:repeat(${COLS},var(--cs))">${this.board.map((it: Item, i: number) => i === GEN ? `<button class="cell gen" data-i="${i}" aria-label="ящик"><svg viewBox="0 0 40 40">${CRATE}</svg><small>−1</small></button>` : `<button class="cell${it && this.wanted(it) ? ' want' : ''}" data-i="${i}">${itemSVG(it)}${it ? `<i class="tier">${it.t + 1}</i>` : ''}</button>`).join('')}</div>
+      <div class="info" id="minfo">Тапни ящик, щоб отримати предмет. Перетягни два однакові, щоб злити. Виконуй замовлення, щоб отримати зірки.</div></div>`;
+    this.el.querySelectorAll('.give').forEach((b: HTMLElement) => b.onclick = () => this.give(+b.dataset.o!));
     this.bindDrag(); this.hud();
   },
+  wanted(it: { c: number; t: number }) { return this.orders.some((o: Order) => o.need.some(n => n.c === it.c && n.t === it.t)); },
   has(n: { c: number; t: number }) { return this.board.some((it: Item) => it && it.c === n.c && it.t === n.t); },
   canFill(o: Order) {
     const used = new Set<number>();

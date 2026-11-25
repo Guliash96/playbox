@@ -41,21 +41,29 @@ export const CHAINS: { id: string; name: string; tiers: string[]; art: string[];
 export const CRATE = `<rect x="5" y="9" width="30" height="24" rx="3" fill="#b07a45" stroke="#1b1b1f" stroke-width="1.5"/><path d="M5 17h30M5 25h30" stroke="#8a5a2b" stroke-width="2"/><path d="M8 9l24 24M32 9L8 33" stroke="#8a5a2b" stroke-width="1.5" opacity=".5"/><rect x="12" y="4" width="16" height="8" rx="2" fill="#3d8bff" stroke="#1b1b1f"/><path d="M15 8h7l3-2v4l-3-2" fill="#fff"/>`;
 
 /** harbour scene; parts appear as chapters are completed */
+export const RESTORE = ['Причал', 'Рибальський човен', 'Маяк', 'Рибний ринок', 'Свято гавані', 'Гавань процвітає'];
 export function harborScene(ch: number) {
-  return `<svg viewBox="0 0 360 110" preserveAspectRatio="xMidYMid slice">
-  <defs><linearGradient id="hsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${ch >= 5 ? '#ffb36b' : '#8fd0ff'}"/><stop offset="1" stop-color="#e8f6ff"/></linearGradient></defs>
-  <rect width="360" height="110" fill="url(#hsky)"/>
-  <circle cx="300" cy="28" r="14" fill="#fff3b0"/>
-  <path d="M0 62q40-14 80-4t90-6 100 2 90-4V70H0z" fill="#8fbf6a"/>
-  <rect x="0" y="66" width="360" height="44" fill="#3d8bc9"/>
-  <path d="M0 74q15-4 30 0t30 0 30 0 30 0 30 0 30 0 30 0 30 0 30 0 30 0 30 0 30 0" stroke="#fff" stroke-opacity=".4" stroke-width="2" fill="none"/>
-  <g transform="translate(30 36)"><rect width="30" height="28" fill="#f5efe2" stroke="#1b1b1f"/><path d="M-3 0l18-14 18 14z" fill="#e8443a" stroke="#1b1b1f"/><rect x="11" y="14" width="8" height="14" fill="#8a5a2b"/></g>
-  <g transform="translate(66 42)"><rect width="24" height="22" fill="#ffd9a0" stroke="#1b1b1f"/><path d="M-3 0l15-11 15 11z" fill="#3d8bff" stroke="#1b1b1f"/><rect x="6" y="6" width="8" height="7" fill="#9fd4f0"/></g>
-  ${ch >= 1 ? `<g><rect x="100" y="62" width="120" height="7" fill="#a8743f" stroke="#1b1b1f"/>${[106, 136, 166, 196, 214].map(x => `<rect x="${x}" y="68" width="4" height="22" fill="#7a5038"/>`).join('')}</g>`
-      : `<g opacity=".8"><rect x="100" y="64" width="40" height="6" fill="#7a5038" transform="rotate(6 100 64)"/><rect x="160" y="66" width="30" height="5" fill="#7a5038" transform="rotate(-10 160 66)"/><rect x="106" y="68" width="4" height="20" fill="#5a3a22"/></g>`}
-  ${ch >= 2 ? `<g class="boat"><path d="M150 70h56l-8 12h-40z" fill="#e8443a" stroke="#1b1b1f"/><rect x="176" y="40" width="3" height="30" fill="#5a3a22"/><path d="M179 42l22 22h-22z" fill="#fff" stroke="#1b1b1f"/></g>` : ''}
-  ${ch >= 3 ? `<g transform="translate(300 20)"><path d="M6 46L10 6h12l4 40z" fill="#fff" stroke="#1b1b1f"/><path d="M8 22h16M7 34h18" stroke="#e8443a" stroke-width="6"/><rect x="9" y="0" width="14" height="8" fill="#ffd23f" stroke="#1b1b1f"/><path d="M16 4L-30 -6M16 4L-30 14" stroke="#fff3b0" stroke-width="3" opacity=".6"/></g>` : ''}
-  ${ch >= 4 ? `<g transform="translate(236 44)"><rect width="34" height="18" fill="#f5efe2" stroke="#1b1b1f"/><path d="M-3 0h40l-4-10H1z" fill="#ff7ab2" stroke="#1b1b1f"/><path d="M4 0v-10M12 0v-10M20 0v-10M28 0v-10" stroke="#fff" stroke-width="3"/></g>` : ''}
-  ${ch >= 5 ? `<path d="M20 30q80 20 160 0t160 0" stroke="#1b1b1f" fill="none"/>${[40, 70, 100, 130, 160, 190, 220, 250, 280, 310].map((x, i) => `<path d="M${x} ${33 + Math.sin(i) * 3}l5 8 5-8z" fill="${['#ff3d7f', '#ffd23f', '#3d8bff'][i % 3]}"/>`).join('')}` : ''}
+  const eve = ch >= 5;
+  const house = (x: number, y: number, w: number, h: number, wall: string, roof: string) => `<g transform="translate(${x} ${y})"><rect x="2" y="3" width="${w}" height="${h}" fill="#000" opacity=".12"/><rect width="${w}" height="${h}" fill="${wall}" stroke="#2b2230" stroke-width="1.2"/><path d="M-4 0L${w / 2} ${-h * .55}L${w + 4} 0z" fill="${roof}" stroke="#2b2230" stroke-width="1.2"/><rect x="${w * .15}" y="${h * .25}" width="${w * .25}" height="${h * .25}" fill="${eve ? '#ffd86b' : '#9fd4f0'}" stroke="#2b2230" stroke-width=".8"/><rect x="${w * .6}" y="${h * .45}" width="${w * .25}" height="${h * .55}" fill="#8a5a2b" stroke="#2b2230" stroke-width=".8"/></g>`;
+  return `<svg viewBox="0 0 360 120" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="hsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${eve ? '#ff9f6b' : '#6fbaf2'}"/><stop offset="1" stop-color="${eve ? '#ffe0b0' : '#d9f0ff'}"/></linearGradient>
+    <linearGradient id="hsea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3fa0d9"/><stop offset="1" stop-color="#1d5f9a"/></linearGradient>
+    <radialGradient id="hsun"><stop offset="0" stop-color="#fff7c2"/><stop offset=".5" stop-color="#fff7c2" stop-opacity=".6"/><stop offset="1" stop-color="#fff7c2" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="360" height="120" fill="url(#hsky)"/>
+  <circle cx="290" cy="${eve ? 60 : 26}" r="30" fill="url(#hsun)"/><circle cx="290" cy="${eve ? 60 : 26}" r="11" fill="#fff3b0"/>
+  <g fill="#fff" opacity=".85"><ellipse cx="60" cy="22" rx="20" ry="6"/><ellipse cx="74" cy="18" rx="12" ry="7"/><ellipse cx="190" cy="14" rx="16" ry="5"/></g>
+  <path d="M0 60q30-22 70-14t60 4 70-6 90 4 70-2V74H0z" fill="#7fb36a"/><path d="M0 66q40-10 90-4t100 0 90-4 80 2V76H0z" fill="#5f9a52"/>
+  ${house(18, 44, 30, 24, '#f5efe2', '#e8443a')}${house(56, 48, 24, 20, '#ffd9a0', '#3d8bff')}${house(86, 46, 26, 22, '#e3f1ff', '#7b5cff')}
+  <rect y="72" width="360" height="48" fill="url(#hsea)"/>
+  <g class="waves" stroke="#fff" stroke-opacity=".35" stroke-width="1.6" fill="none"><path d="M-20 80q10-4 20 0t20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0"/><path d="M-10 94q10-4 20 0t20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0 20 0"/></g>
+  ${ch >= 1 ? `<g><rect x="118" y="68" width="112" height="7" rx="1" fill="#b07a45" stroke="#2b2230"/>${[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(k => `<path d="M${120 + k * 8} 68v7" stroke="#8a5a2b"/>`).join('')}${[124, 154, 184, 214].map(x => `<rect x="${x}" y="74" width="4" height="22" fill="#6b4429"/>`).join('')}</g>`
+      : `<g><rect x="118" y="70" width="36" height="6" fill="#7a5038" transform="rotate(8 118 70)"/><rect x="172" y="72" width="26" height="5" fill="#7a5038" transform="rotate(-12 172 72)"/><rect x="124" y="74" width="4" height="18" fill="#5a3a22"/><rect x="184" y="76" width="4" height="14" fill="#5a3a22" transform="rotate(10 184 76)"/></g>`}
+  ${ch >= 2 ? `<g class="boat"><path d="M160 78h60l-9 13h-42z" fill="#e8443a" stroke="#2b2230"/><path d="M160 78h60" stroke="#fff" stroke-width="2"/><rect x="188" y="44" width="3" height="34" fill="#5a3a22"/><path d="M191 46l24 28h-24z" fill="#fff" stroke="#2b2230"/><path d="M188 48l-18 24h18z" fill="#ffd23f" stroke="#2b2230"/></g>` : ''}
+  ${ch >= 3 ? `<g transform="translate(300 18)">${eve ? '<path d="M16 6L-60 -10L-60 20z" fill="#fff3b0" opacity=".5"/>' : ''}<path d="M6 58L10 10h12l4 48z" fill="#fff" stroke="#2b2230"/><path d="M8 26h16M7 42h18" stroke="#e8443a" stroke-width="7"/><rect x="8" y="0" width="16" height="10" rx="2" fill="#ffd23f" stroke="#2b2230"/><path d="M6 0h20l-10-7z" fill="#e8443a" stroke="#2b2230"/></g>` : ''}
+  ${ch >= 4 ? `<g transform="translate(240 50)"><rect width="40" height="20" fill="#f5efe2" stroke="#2b2230"/><path d="M-4 0h48l-5-12H1z" fill="#ff7ab2" stroke="#2b2230"/><path d="M5 0v-12M15 0v-12M25 0v-12M35 0v-12" stroke="#fff" stroke-width="4"/><rect x="6" y="8" width="28" height="5" fill="#8a5a2b"/><circle cx="12" cy="7" r="2.5" fill="#3d8bff"/><circle cx="20" cy="7" r="2.5" fill="#ffb020"/><circle cx="28" cy="7" r="2.5" fill="#3d8bff"/></g>` : ''}
+  ${ch >= 5 ? `<path d="M10 34q85 22 170 0t170 0" stroke="#2b2230" fill="none"/>${Array.from({ length: 16 }, (_, i) => { const x = 18 + i * 21, y = 36 + Math.sin(i * .9) * 4; return `<path d="M${x} ${y}l5 9 5-9z" fill="${['#ff3d7f', '#ffd23f', '#3d8bff', '#2fbf71'][i % 4]}"/>`; }).join('')}` : ''}
+  <g class="gulls" fill="none" stroke="#2b2230" stroke-width="1.4" stroke-linecap="round"><path d="M140 30q4-4 8 0q4-4 8 0"/><path d="M170 22q3-3 6 0q3-3 6 0"/></g>
 </svg>`;
 }

@@ -42,7 +42,7 @@ const FindCat: Game & Record<string, any> = {
   start(el: HTMLElement) { this.el = el; this.load(); },
   load() {
     const L = this.lvl = store.get('fc_lvl', 1);
-    this.k = Math.min(12, 3 + L); this.zoom = L < 3 ? 1 : L < 6 ? 1.4 : 1.8; this.cr = Math.max(7, 12.5 - L * .55); this.found = 0;
+    this.k = Math.min(12, 3 + L); this.cr = Math.max(7.5, 12.5 - L * .5); this.found = 0;
     this.build(); this.draw();
     setTools([['Підказка за рекламу', () => Ads.rewarded(() => this.hint())], ['Нова сцена', () => this.load()]]);
   },
@@ -75,7 +75,7 @@ const FindCat: Game & Record<string, any> = {
     this.scene = s;
   },
   draw() {
-    const W = Math.floor(Math.min(this.el.clientWidth - 30, (this.el.clientHeight - 20) / 1.5) * this.zoom);
+    const W = Math.floor(Math.min(this.el.clientWidth - 16, (this.el.clientHeight - 16) / 1.5));
     this.el.innerHTML = `<div class="fc"><svg viewBox="0 0 ${VW} ${VH}" width="${W}" height="${Math.round(W * 1.5)}">${this.scene}<g id="mk"></g></svg></div>`;
     const svg = this.svg = this.el.querySelector('svg'); svg.onclick = (e: MouseEvent) => this.tap(e); this.hud();
   },
@@ -99,7 +99,6 @@ const FindCat: Game & Record<string, any> = {
   hint() {
     const c = this.cats.find((c: any) => !c.f); if (!c) return;
     const m = this.add('circle', { cx: c.x, cy: c.y, r: c.r * 2.6, class: 'hintc' });
-    try { m.scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' }); } catch { }
     setTimeout(() => m.remove(), 2200);
   },
 };

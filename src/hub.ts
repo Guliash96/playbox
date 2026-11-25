@@ -13,7 +13,7 @@ export function renderHub() {
   const card = (g: typeof GAMES[number], cls = '') => `
     <button class="card ${cls} ${g.load ? '' : 'soon'}" data-id="${g.id}" style="--gc:${g.color}">
       <span class="art"><svg viewBox="0 0 160 110" preserveAspectRatio="xMidYMid slice">${g.art()}</svg></span>
-      <span class="info"><b>${g.name}</b><small>${g.load ? g.meta!() : g.tag}</small>${cls ? `<span class="tag">Грати</span>` : ''}</span>
+      <span class="info">${cls ? '<span>' : ''}<b>${g.name}</b><small>${g.load ? g.meta!() : g.tag}</small>${cls ? `</span><span class="tag">Грати</span>` : ''}</span>
       ${cls ? '' : `<span class="tag">${g.load ? 'Грати' : 'Скоро'}</span>`}
     </button>`;
   $('#hub').innerHTML = `

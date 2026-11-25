@@ -1,0 +1,5 @@
+#game.th-defense{background:linear-gradient(#6f8a76,#9fb3a0)}
+#game.th-defense .bar h1{color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.3)}
+#game.th-defense #stage{padding:0}
+#game.th-defense #stage.hurt::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 80px rgba(255,0,0,.7);animation:hurt .5s forwards;pointer-events:none}
+@keyframes hurt{to{opacity:0}}
