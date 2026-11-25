@@ -8,6 +8,7 @@ import { setStats, setTools, modal, pill, flash } from '../core/ui';
 import { Ads } from '../core/ads';
 import { done } from '../core/flow';
 import { coinStack, ensureCoinDefs, COIN_T, COIN_RY } from '../art/coin';
+import { Score } from '../core/score';
 import type { Game } from './registry';
 
 const CAP = 10, VH = 112;
@@ -54,7 +55,7 @@ const Coins: Game & Record<string, any> = {
     this.busy = true;
     idx.forEach((i: number) => this.cell(i)?.classList.add('collapse'));
     haptic('ok'); await sleep(620); if (this.dead) return;
-    idx.forEach((i: number) => { this.st[i] = [this.st[i][0] + 1]; this.merges++; });
+    idx.forEach((i: number) => { this.st[i] = [this.st[i][0] + 1]; this.merges++; Score.good(40); });
     this.fresh = new Map(idx.map((i: number) => [i, 0])); this.draw();
     idx.forEach((i: number) => { const c = this.cell(i); flash(c, 'merge', 800); const t = document.createElement('b'); t.className = 'plus'; t.textContent = 'Злиття!'; c.appendChild(t); });
     this.busy = false; this.hud();
@@ -71,9 +72,10 @@ const Coins: Game & Record<string, any> = {
     if (this.busy) return;
     if (this.sel < 0) { if (this.st[i].length) { this.sel = i; haptic(); this.draw(); } return; }
     if (this.sel === i) { this.sel = -1; this.draw(); return; }
-    if (!this.canTo(this.sel, i)) { haptic('err'); this.bad = i; this.sel = this.st[i].length ? i : -1; return this.draw(); }
+    if (!this.canTo(this.sel, i)) { haptic('err'); Score.bad(); this.bad = i; this.sel = this.st[i].length ? i : -1; return this.draw(); }
     const a = this.sel, A = this.st[a], Bst = this.st[i], m = Math.min(this.run(a), CAP - Bst.length), b0 = Bst.length;
     const from = Array.from({ length: m }, (_, k) => this.coinPt(a, A.length - 1 - k, -12));
+    Score.good(5);
     const vals: number[] = []; for (let j = 0; j < m; j++) { const v = A.pop(); vals.push(v); Bst.push(v); }
     this.sel = -1; this.busy = true; haptic();
     this.draw(new Map([[i, b0]]));

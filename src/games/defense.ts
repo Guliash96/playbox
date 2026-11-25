@@ -7,10 +7,11 @@ import { R, pick } from '../core/util';
 import { store } from '../core/store';
 import { haptic } from '../core/platform';
 import { setStats, setTools, modal, pill, hearts, toast } from '../core/ui';
-import { Ads } from '../core/ads';
+import { gameOver } from '../core/flow';
 import { Stage, THREE, RoundedBoxGeometry, mat, mesh } from '../core/three';
 import { person, animate, labelTexture, type Person } from '../art/people3d';
 import { car3d } from '../art/car3d';
+import { Score } from '../core/score';
 import type { Game } from './registry';
 
 const WEAPONS = [
@@ -42,7 +43,7 @@ const Defense: Game & Record<string, any> = {
     for (let z = 2; z > -70; z -= .8) { const b = mesh(new RoundedBoxGeometry(.25, .3, .78, 2, .05), (Math.round(z / .8) % 2) ? stripeA : stripeB); b.position.set(0, .15, z); st.scene.add(b); }
     for (let k = 0; k < 10; k++) { const c = car3d(2, pick(['#6b6b70', '#8a5a2b', '#5a6b7a', '#7a3a3a'])); c.position.set((Math.random() < .5 ? -1 : 1) * (4.2 + Math.random() * 3), 0, -k * 7 - 3); c.rotation.y = Math.random() * 3; c.rotation.z = Math.random() < .3 ? .3 : 0; st.scene.add(c); }
     const line = mesh(new THREE.BoxGeometry(6.2, .02, .12), mat(0xff3d3d, { emissive: 0xff2020, emissiveIntensity: .5 }), false); line.position.set(0, .02, .7); st.scene.add(line);
-    st.camera.position.set(0, 5.2, 5.4); st.camera.lookAt(0, .4, -8);
+    st.onResize = () => { const c = st.camera, k = Math.max(1, 3.1 / (7.5 * Math.tan(c.fov * Math.PI / 360) * c.aspect)); c.position.set(0, 5.2 * k, 5.4 * k); c.lookAt(0, .4, -8); }; st.resize();
     this.bulletGeo = new THREE.CapsuleGeometry(.05, .3, 2, 6).rotateX(Math.PI / 2);
     st.onFrame = (dt: number) => this.frame(dt);
     this.bind(); this.reset(); this.state = 'ready';
@@ -130,8 +131,8 @@ const Defense: Game & Record<string, any> = {
     for (const e of this.ents) {
       if (e.hp <= 0 && !(e as any).dead) {
         (e as any).dead = true; const o = e.o;
-        if (e.kind === 'human') { toast('Ой! Це був вцілілий'); }
-        else { this.kills += e.kind === 'boss' ? 50 : 1; if (e.kind === 'boss') { this.bosses++; toast('Боса знищено!'); haptic('ok'); } }
+        if (e.kind === 'human') { toast('Ой! Це був вцілілий'); Score.bad(); }
+        else { this.kills += e.kind === 'boss' ? 50 : 1; Score.good(e.kind === 'boss' ? 100 : 3); if (e.kind === 'boss') { this.bosses++; toast('Боса знищено!'); haptic('ok'); } }
         this.st.tween(350, k => { o.rotation.x = -k * 1.5; o.position.y = -k * .3; }).then(() => this.st.scene.remove(o));
       }
       if (!(e as any).dead && e.o.position.z > -.3) {
@@ -157,10 +158,8 @@ const Defense: Game & Record<string, any> = {
   over() {
     this.state = 'over';
     if (this.kills > this.best) { this.best = this.kills; store.set('df_best', this.best); }
-    const b: any[] = [];
-    if (!this.cont) b.push(['Реклама: продовжити', () => Ads.rewarded(() => { this.cont = true; this.hp = 2; for (const e of this.ents) this.st.scene.remove(e.o); this.ents = []; this.state = 'run'; this.hud(); })]);
-    b.push(['Ще раз', () => { this.reset(); this.state = 'ready'; }]);
-    modal(`<h2>Оборону прорвано</h2><p>Вбито: <b>${this.kills}</b> · рекорд ${this.best}</p><p class="muted">Зброя: ${WEAPONS[this.wpn].n}</p>`, b);
+    const revive = () => { this.cont = true; this.hp = 2; for (const e of this.ents) this.st.scene.remove(e.o); this.ents = []; this.state = 'run'; this.hud(); };
+    gameOver('Оборону прорвано', `<p>Вбито: <b>${this.kills}</b> · рекорд ${this.best}</p><p class="muted">Зброя: ${WEAPONS[this.wpn].n}</p>`, this.cont ? null : revive, () => { this.reset(); this.state = 'ready'; });
   },
 };
 export default Defense;

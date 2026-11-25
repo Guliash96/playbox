@@ -6,6 +6,11 @@ import { initPlatform, setBackButton } from './core/platform';
 import { store } from './core/store';
 import { GAMES, type Game } from './games/registry';
 import { renderHub } from './hub';
+import { startAutoTranslate } from './core/i18n';
+import { onboarding, leaderSheet } from './core/social';
+import { extraTool } from './core/ui';
+import { Score } from './core/score';
+import { flush } from './core/net';
 
 let cur: Game | null = null, seq = 0;
 const home = () => { location.hash = ''; };
@@ -13,7 +18,7 @@ const home = () => { location.hash = ''; };
 async function route() {
   const id = location.hash.slice(1), info = GAMES.find(g => g.id === id && g.load);
   const my = ++seq;
-  closeModal(); cur?.stop?.(); cur = null;
+  closeModal(); cur?.stop?.(); cur = null; if (Score.pts > 0) Score.commit(); Score.game = ''; Score.render();
   const game = $('#game');
   if (!info) {
     game.hidden = true; game.className = ''; $('#hub').hidden = false; renderHub(); setBackButton(false); return;
@@ -23,11 +28,15 @@ async function route() {
   store.set('last', id);
   $('#hub').hidden = true; game.hidden = false; game.className = mod.theme || '';
   $('#gtitle').textContent = mod.title; $('#stage').innerHTML = ''; $('#stats').innerHTML = ''; $('#tools').innerHTML = '';
-  cur = mod; mod.start($('#stage')); setBackButton(true);
+  extraTool.fn = () => leaderSheet(id, info.name);
+  Score.begin(id); cur = mod; mod.start($('#stage')); setBackButton(true);
 }
 
 initPlatform(home);
 $('#back').onclick = home;
 addEventListener('hashchange', route);
 renderAdBar();
-route();
+startAutoTranslate();
+onboarding(() => route());
+addEventListener('online', () => flush()); flush();
+document.addEventListener('nick', () => { if (!location.hash) renderHub(); });

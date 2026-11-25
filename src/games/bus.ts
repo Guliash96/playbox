@@ -9,31 +9,23 @@ import { setStats, setTools, modal, pill, flash } from '../core/ui';
 import { Ads } from '../core/ads';
 import { done } from '../core/flow';
 import { busSVG, crowd } from '../art/bus';
+import { Score } from '../core/score';
 import type { Game } from './registry';
 
 const BUSC = ['#ff3d7f', '#2f9bff', '#ffb020', '#7b5cff', '#e8443a', '#18b5c4'];
 const HOLD = 5;
 
 function nbrs(i: number, W: number, H: number) { const r = Math.floor(i / W), c = i % W; return [[i - W, r > 0], [i + W, r < H - 1], [i - 1, c > 0], [i + 1, c < W - 1]].filter(x => x[1]).map(x => x[0] as number); }
-/** BFS from a group through empty cells to the top row; returns path of cells (group first) or null */
-function pathOut(g: number[], W: number, H: number, s: number): number[] | null {
-  if (s < W) return [s];
-  const prev = new Map<number, number>([[s, -1]]), q = [s];
-  while (q.length) {
-    const i = q.shift()!;
-    for (const j of nbrs(i, W, H)) {
-      if (prev.has(j) || g[j] !== 0) continue; prev.set(j, i);
-      if (j < W) { const p = [j]; let k = i; while (k !== -1) { p.unshift(k); k = prev.get(k)!; } return p; }
-      q.push(j);
-    }
-  }
-  return null;
+/** a group can leave only if every cell above it in its column is empty (queues are columns) */
+function pathOut(g: number[], W: number, _H: number, s: number): number[] | null {
+  const c = s % W, p = [s];
+  for (let y = Math.floor(s / W) - 1; y >= 0; y--) { const j = y * W + c; if (g[j] !== 0) return null; p.push(j); }
+  return p;
 }
 function generate(W: number, H: number, nc: number, k: number) {
   // random legal removal order, coloured in chunks of k → bus sequence; solvable with an empty platform
   for (let t = 0; t < 300; t++) {
     const N = W * H, g = Array(N).fill(1);
-    let walls = R(4); for (const i of shuffle([...Array(N).keys()])) if (walls && i >= W * 2) { g[i] = -1; walls--; }
     let em = g.filter(x => x > 0).length % k + 2; for (const i of shuffle([...Array(N).keys()])) if (em && g[i] > 0) { g[i] = 0; em--; }
     const sim = g.slice(), order: number[] = [];
     for (; ;) { const acc = sim.map((v, i) => i).filter(i => sim[i] > 0 && pathOut(sim, W, H, i)); if (!acc.length) break; const i = pick(acc); order.push(i); sim[i] = 0; }
@@ -112,8 +104,8 @@ const Bus: Game & Record<string, any> = {
     const cells = this.el.querySelector('.yard').children;
     const pts = path.map(j => this.center(cells[j])), top = pts[pts.length - 1]; pts.push([top[0], top[1] - this.cs * .9]);
     let slot: { c: number; here: boolean } | null = null;
-    if (toBus) { this.seats++; pts.push(this.doorPt()); }
-    else { slot = { c: col, here: false }; this.hold.push(slot); pts.push(this.center(this.el.querySelectorAll('.plat .slot')[this.hold.length - 1])); }
+    if (toBus) { this.seats++; pts.push(this.doorPt()); Score.good(10); }
+    else { Score.bad(); slot = { c: col, here: false }; this.hold.push(slot); pts.push(this.center(this.el.querySelectorAll('.plat .slot')[this.hold.length - 1])); }
     this.g[i] = 0; this.renderYard();
     this.walk(pts, BUSC[col], [...path.map(() => 70), 140, 230]).then(() => {
       if (this.dead) return;
@@ -125,11 +117,11 @@ const Bus: Game & Record<string, any> = {
     if (!this.ready || this.seats < this.k || this.seated < this.k) return;
     this.ready = false; haptic('ok');
     const b = this.el.querySelector('.busEl');
-    await b.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(120vw)' }], { duration: 600, easing: 'cubic-bezier(.5,0,.9,.6)', fill: 'forwards' }).finished.catch(() => { });
+    await b.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(120vw)' }], { duration: 1000, easing: 'cubic-bezier(.5,0,.9,.6)', fill: 'forwards' }).finished.catch(() => { });
     if (this.dead) return;
     this.bi++; this.seats = 0; this.seated = 0; this.hud();
     if (this.bi >= this.buses.length) { this.renderBus(); this.over = true; return done('bj_lvl', this.lvl, () => this.load()); }
-    this.renderBus(true); await sleep(480); if (this.dead) return;
+    this.renderBus(true); await sleep(820); if (this.dead) return;
     this.ready = true;
     // groups waiting on the platform board the new bus automatically
     const c = this.buses[this.bi];

@@ -8,6 +8,7 @@ import { haptic } from '../core/platform';
 import { setStats, setTools, modal, pill, toast, flash } from '../core/ui';
 import { Ads } from '../core/ads';
 import { done } from '../core/flow';
+import { Score } from '../core/score';
 import type { Game } from './registry';
 
 const PAL: Record<string, string> = { R: '#e8443a', W: '#f5efe2', Y: '#ffc533', K: '#3a3340', P: '#ff7ab2', O: '#ff9a3c', B: '#3d8bff', G: '#3fbf5f', N: '#8a5a2b' };
@@ -116,7 +117,7 @@ const Snake: Game & Record<string, any> = {
   bite(r: Run, p: any) {
     const t = this.facing(p.side, p.i);
     if (t < 0 || r.sn.n <= 0 || this.g[t] !== r.sn.c) return;
-    this.g[t] = null; r.sn.n--; r.head.querySelector('b')!.textContent = String(r.sn.n);
+    this.g[t] = null; r.sn.n--; Score.good(3); r.head.querySelector('b')!.textContent = String(r.sn.n);
     const seg = r.segs.pop(); seg?.remove();
     flash(r.head, 'chomp', 180); haptic();
     const b = this.el.querySelector(`.bricks [data-i="${t}"]`) as HTMLElement;

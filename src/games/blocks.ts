@@ -4,7 +4,8 @@ import { pick, $$ } from '../core/util';
 import { store } from '../core/store';
 import { haptic } from '../core/platform';
 import { setStats, setTools, modal, pill } from '../core/ui';
-import { Ads } from '../core/ads';
+import { gameOver } from '../core/flow';
+import { Score } from '../core/score';
 import type { Game } from './registry';
 
 const BCOL = ['#ff3d7f', '#2f9bff', '#ffb020', '#7b5cff', '#e8443a', '#18b5c4', '#2fbf71'];
@@ -71,7 +72,8 @@ const Blocks: Game & Record<string, any> = {
       if (col) { lines++; for (let j = 0; j < 8; j++) full.set(j * 8 + k, this.b[j * 8 + k]); }
     }
     full.forEach((_, x) => this.b[x] = 0);
-    if (lines) { this.score += lines * lines * 10; haptic('ok'); } else haptic();
+    Score.good(p.cells.length);
+    if (lines) { this.score += lines * lines * 10; Score.add(lines * lines * 20 * Score.mult); haptic('ok'); } else haptic();
     if (this.score > this.best) { this.best = this.score; store.set('bb_best', this.best); }
     if (this.tray.every((x: Piece) => !x)) this.refill();
     this.draw();
@@ -82,9 +84,8 @@ const Blocks: Game & Record<string, any> = {
   },
   over() {
     const b: any[] = [];
-    if (!this.cont) b.push(['Реклама: розчистити центр', () => Ads.rewarded(() => { this.cont = true; for (let r = 2; r < 6; r++) for (let c = 2; c < 6; c++) this.b[r * 8 + c] = 0; if (!this.canMove()) this.refill(); this.draw(); })]);
-    b.push(['Нова гра', () => this.start(this.el)]);
-    modal(`<h2>Місця немає</h2><p>Рахунок: <b>${this.score}</b> · рекорд ${this.best}</p>`, b);
+    if (!this.cont) b.push(['', () => ((() => { this.cont = true; for (let r = 2; r < 6; r++) for (let c = 2; c < 6; c++) this.b[r * 8 + c] = 0; if (!this.canMove()) this.refill(); this.draw(); }))()]);
+    gameOver('Місця немає', `<p>Рахунок: <b>${this.score}</b> · рекорд ${this.best}</p>`, this.cont ? null : () => b[0][1](), () => this.start(this.el));
   },
 };
 export default Blocks;

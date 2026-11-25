@@ -8,6 +8,7 @@ import { setStats, setTools, hearts, pill, flash } from '../core/ui';
 import { Ads } from '../core/ads';
 import { done, outOfHearts } from '../core/flow';
 import { sittingCat } from '../art/cat';
+import { Score } from '../core/score';
 import type { Game } from './registry';
 
 const ZONES = ['#ffc1d3', '#b9e0ff', '#ffd9a0', '#d6c9ff', '#b3eee8', '#ffcdb8', '#f3e690', '#e3d3c1'];
@@ -51,7 +52,7 @@ const Catdoku: Game & Record<string, any> = {
       const inner = m === 2 ? `<span class="cat">${sittingCat(this.fur[rg[i]])}</span>` : m === 1 ? CROSS('x') : m === 4 ? CROSS('x auto') : m === 3 ? CROSS('x bad') : '';
       h += `<button data-i="${i}" style="${st}" aria-label="рядок ${r + 1}, стовпець ${c + 1}">${inner}</button>`;
     }
-    this.el.innerHTML = `<div class="qframe"><div class="qd" style="grid-template-columns:repeat(${n},minmax(0,1fr))">${h}</div></div>`;
+    this.el.innerHTML = `<div class="qframe"><div class="qd" style="grid-template-columns:repeat(${n},minmax(0,1fr));grid-template-rows:repeat(${n},minmax(0,1fr))">${h}</div></div>`;
     this.el.querySelectorAll('.qd button').forEach((b: HTMLElement) => b.onclick = () => this.tap(+b.dataset.i));
     setStats(`${pill('Рів. ' + this.lvl)}${hearts(this.hp)}`);
   },
@@ -64,8 +65,8 @@ const Catdoku: Game & Record<string, any> = {
   tap(i: number) {
     if (this.hp <= 0) return; const m = this.m[i]; if (m === 2 || m === 3) return;
     if (m === 0) { this.m[i] = 1; haptic(); return this.draw(); }
-    if (this.sol[Math.floor(i / this.n)] === i % this.n) { this.put(i); this.draw(); this.cell(i).classList.add('pop'); }
-    else { this.m[i] = 3; this.hp--; haptic('err'); this.draw(); flash(this.cell(i), 'shake'); }
+    if (this.sol[Math.floor(i / this.n)] === i % this.n) { this.put(i); Score.good(30); this.draw(); this.cell(i).classList.add('pop'); }
+    else { this.m[i] = 3; this.hp--; Score.bad(); haptic('err'); this.draw(); flash(this.cell(i), 'shake'); }
     this.check();
   },
   check() {

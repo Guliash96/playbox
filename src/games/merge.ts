@@ -7,17 +7,18 @@ import { haptic } from '../core/platform';
 import { setStats, setTools, modal, toast, pill, flash } from '../core/ui';
 import { Ads } from '../core/ads';
 import { CHAINS, CRATE, harborScene, RESTORE } from '../art/harbor';
+import { Score } from '../core/score';
 import type { Game } from './registry';
 
 const COLS = 7, ROWS = 8, GEN = 3 * COLS + 3, EMAX = 40, EREGEN = 20_000;
 type Item = { c: number; t: number } | null;
 interface Order { who: number; need: { c: number; t: number }[]; stars: number }
-const FOLK = [{ n: 'Капітан Остап', hat: '#1f3a8a', skin: '#f2c9a0' }, { n: 'Бабця Ліна', hat: '#ff7ab2', skin: '#f5d4b3' }, { n: 'Юнга Тарас', hat: '#e8443a', skin: '#e9b98f' }, { n: 'Рибачка Мар\'яна', hat: '#3fbf5f', skin: '#f2c9a0' }];
+const FOLK = [{ n: 'Captain Jack', hat: '#1f3a8a', skin: '#f2c9a0' }, { n: 'Granny Rose', hat: '#ff7ab2', skin: '#f5d4b3' }, { n: 'Deckhand Tom', hat: '#e8443a', skin: '#e9b98f' }, { n: 'Fisher Mia', hat: '#3fbf5f', skin: '#c99872' }, { n: 'Old Sam', hat: '#7b5cff', skin: '#8d5a3b' }];
 const STORY = [
   'Стара гавань занепала: причал розвалився, човни пішли. Мешканці просять допомогти, почнемо з причалу!',
-  'Причал знову міцний! Капітан Остап каже: без човна риби не наловиш.',
+  'Причал знову міцний! Captain Jack каже: без човна риби не наловиш.',
   'Човен на воді! Тепер потрібен маяк, щоб рибалки поверталися додому вночі.',
-  'Маяк світить! Бабця Ліна мріє про ринок свіжої риби.',
+  'Маяк світить! Granny Rose мріє про ринок свіжої риби.',
   'Ринок відкрито! Залишилось влаштувати свято на честь відродження гавані.',
   'Гавань ожила! Свято триває, а замовлення продовжують надходити.',
 ];
@@ -78,7 +79,7 @@ const Merge: Game & Record<string, any> = {
   give(i: number) {
     const o: Order = this.orders[i]; if (!this.canFill(o)) return;
     o.need.forEach(n => { const k = this.board.findIndex((it: Item) => it && it.c === n.c && it.t === n.t); this.board[k] = null; });
-    this.orders.splice(i, 1); this.stars += o.stars; haptic('ok'); toast(`${FOLK[o.who].n}: дякую! +${o.stars}★`);
+    this.orders.splice(i, 1); this.stars += o.stars; haptic('ok'); Score.add(o.stars * 20); Score.commit(); toast(`${FOLK[o.who].n}: дякую! +${o.stars}★`);
     if (this.stars >= this.goal()) { this.stars -= this.goal(); this.ch = Math.min(this.ch + 1, STORY.length - 1); this.save(); this.render(); return this.story(true); }
     this.fillOrders(); this.save(); this.render();
   },
@@ -124,7 +125,7 @@ const Merge: Game & Record<string, any> = {
   drop(i: number, j: number) {
     const a: Item = this.board[i], b: Item = this.board[j];
     if (b && a && a.c === b.c && a.t === b.t && a.t + 1 < CHAINS[a.c].tiers.length) {
-      this.board[j] = { c: a.c, t: a.t + 1 }; this.board[i] = null; haptic('ok');
+      this.board[j] = { c: a.c, t: a.t + 1 }; this.board[i] = null; haptic('ok'); Score.good(5 * (a.t + 1));
       this.save(); this.render(); this.el.querySelector(`[data-i="${j}"]`)?.classList.add('merged'); this.info(j); return;
     }
     this.board[j] = a; this.board[i] = b; haptic(); this.save(); this.render();

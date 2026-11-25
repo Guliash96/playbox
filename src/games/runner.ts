@@ -5,8 +5,9 @@ import { R, pick } from '../core/util';
 import { store } from '../core/store';
 import { haptic } from '../core/platform';
 import { setStats, setTools, modal, pill } from '../core/ui';
-import { Ads } from '../core/ads';
+import { gameOver } from '../core/flow';
 import { Stage, THREE, RoundedBoxGeometry, mat, mesh } from '../core/three';
+import { Score } from '../core/score';
 import type { Game } from './registry';
 
 const LANE = 1.7, SKY = 0xcfe4ff;
@@ -90,7 +91,7 @@ const Runner: Game & Record<string, any> = {
   tip() { this.el.querySelector('.rtip')?.remove(); const t = document.createElement('div'); t.className = 'rtip'; t.innerHTML = '<b>Торкнись, щоб почати</b><br>свайп ← → змінює смугу, ↑ стрибок'; this.el.appendChild(t); },
   reset() {
     for (const o of this.obs || []) this.st.scene.remove(o.o);
-    this.obs = [] as Ob[]; this.lane = 0; this.px = 0; this.jump = 0; this.vy = 0; this.speed = 12; this.dist = 0; this.coins = 0; this.nextRow = 16; this.cont = false; this.t = 0;
+    this.obs = [] as Ob[]; this.lane = 0; this.px = 0; this.jump = 0; this.vy = 0; this.speed = 12; this.dist = 0; this.coins = 0; this.nextRow = 16; this.cont = false; this.t = 0; this.paid = 0;
     for (let z = 2; z > -70; z -= 3.2) this.deco(z);
     this.hud();
   },
@@ -137,7 +138,7 @@ const Runner: Game & Record<string, any> = {
       this.tex.offset.y += dz / 4;
       for (const o of this.obs) {
         if (o.kind === 'deco' || o.got || Math.abs(o.o.position.z) > .65 || Math.abs(o.lane - this.px) > .45) continue;
-        if (o.kind === 'coin') { o.got = true; this.coins++; haptic(); const c = o.o; this.st.tween(250, k => { c.position.y = .7 + k * 1.2; c.scale.setScalar(1 - k); }); continue; }
+        if (o.kind === 'coin') { o.got = true; this.coins++; haptic(); Score.good(5); const c = o.o; this.st.tween(250, k => { c.position.y = .7 + k * 1.2; c.scale.setScalar(1 - k); }); continue; }
         if ((o.kind === 'rock' || o.kind === 'log') && this.jump > .4) continue;
         this.crash(); break;
       }
@@ -157,10 +158,9 @@ const Runner: Game & Record<string, any> = {
     this.state = 'crash'; haptic('err');
     const p = this.player; this.st.tween(500, k => { p.rotation.z = k * 1.4; p.position.y = Math.sin(k * Math.PI) * .6; });
     const sc = Math.floor(this.score()); if (sc > this.best) { this.best = sc; store.set('rn_best', sc); } this.hud();
-    const b: any[] = [];
-    if (!this.cont) b.push(['Реклама: продовжити', () => Ads.rewarded(() => { this.cont = true; for (const o of this.obs.filter((o: Ob) => o.kind !== 'deco' && o.o.position.z > -16)) { this.st.scene.remove(o.o); o.got = true; } this.state = 'run'; })]);
-    b.push(['Ще раз', () => { this.reset(); this.state = 'ready'; this.tip(); }]);
-    setTimeout(() => modal(`<h2>Бум!</h2><p>Рахунок: <b>${sc}</b> · рекорд ${this.best}</p>`, b), 600);
+    Score.add(this.dist - (this.paid || 0)); this.paid = this.dist;
+    const revive = () => { this.cont = true; for (const o of this.obs.filter((o: Ob) => o.kind !== 'deco' && o.o.position.z > -16)) { this.st.scene.remove(o.o); o.got = true; } this.state = 'run'; };
+    setTimeout(() => gameOver('Бум!', `<p>Рахунок: <b>${sc}</b> · рекорд ${this.best}</p>`, this.cont ? null : revive, () => { this.reset(); this.state = 'ready'; this.tip(); }), 600);
   },
 };
 export default Runner;

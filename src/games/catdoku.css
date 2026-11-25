@@ -1,7 +1,7 @@
 #game.th-catdoku{background-color:#f6dce6;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cg fill='%23e8b8cb'%3E%3Cellipse cx='20' cy='24' rx='6' ry='5'/%3E%3Ccircle cx='13' cy='16' r='2.6'/%3E%3Ccircle cx='19' cy='13' r='2.6'/%3E%3Ccircle cx='25' cy='14' r='2.6'/%3E%3Ccircle cx='28' cy='20' r='2.4'/%3E%3Cg transform='translate(40 40) rotate(25)'%3E%3Cellipse cx='20' cy='24' rx='6' ry='5'/%3E%3Ccircle cx='13' cy='16' r='2.6'/%3E%3Ccircle cx='19' cy='13' r='2.6'/%3E%3Ccircle cx='25' cy='14' r='2.6'/%3E%3Ccircle cx='28' cy='20' r='2.4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")}
 .qframe{padding:10px;border-radius:22px;background:#fff;border:3px solid #2a2230;box-shadow:0 8px 0 #2a2230,0 18px 30px rgba(90,40,70,.25)}
 .qd{display:grid;width:min(calc(100vw - 50px),440px,calc(100dvh - 270px));aspect-ratio:1;border:3px solid #2a2230;border-radius:10px;overflow:hidden}
-.qd button{border:0;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;color:#6f6478}
+.qd button{border:0;padding:0;min-height:0;min-width:0;overflow:hidden;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;color:#6f6478}
 .qd button:active{filter:brightness(.95)}
 .qd .x{width:46%;height:46%;opacity:.8}
 .qd .x.auto{opacity:.35;width:34%;height:34%}

@@ -9,6 +9,7 @@ import { Ads } from '../core/ads';
 import { done, outOfHearts } from '../core/flow';
 import { Stage, THREE, mat, mesh, ease } from '../core/three';
 import { car3d } from '../art/car3d';
+import { Score } from '../core/score';
 import type { Game } from './registry';
 
 const D = [[-1, 0], [0, 1], [1, 0], [0, -1]];          // up right down left (row, col)
@@ -98,7 +99,7 @@ const Parking: Game & Record<string, any> = {
     const dir = new THREE.Vector3(dc, 0, dr);
     c.busy = true;
     if (!blocker) {
-      c.gone = true; haptic();
+      c.gone = true; haptic(); Score.good(10);
       const far = dist + c.len + this.n;
       st.tween(300 + far * 55, k => { o.position.copy(home).addScaledVector(dir, far * ease.in(k)); o.rotation.z = 0; }).then(() => this.world.remove(o));
       if (this.cars.every((k: Car) => k.gone)) done('pk_lvl', this.lvl, () => this.load());
@@ -106,7 +107,7 @@ const Parking: Game & Record<string, any> = {
     }
     const go = dist + .1, t = 140 + dist * 70;
     await st.tween(t, k => o.position.copy(home).addScaledVector(dir, go * ease.in(k)));
-    haptic('err'); this.hp--; this.hud();
+    haptic('err'); this.hp--; this.hud(); Score.bad();
     const b = blocker.obj!, bh = b.userData.home as THREE.Vector3, side = new THREE.Vector3(dr, 0, dc);
     st.tween(420, k => { const s = Math.sin(k * Math.PI * 5) * (1 - k); b.position.copy(bh).addScaledVector(side, s * .08).addScaledVector(dir, s * .05); b.rotation.x = s * .06; });
     await st.tween(t + 120, k => o.position.copy(home).addScaledVector(dir, go * (1 - ease.out(k))));

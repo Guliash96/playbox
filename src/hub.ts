@@ -3,6 +3,9 @@ import { store } from './core/store';
 import { toast } from './core/ui';
 import { buyNoAds } from './core/ads';
 import { GAMES } from './games/registry';
+import { myNick } from './core/net';
+import { profileSheet } from './core/social';
+const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 
 import { ensureCoinDefs } from './art/coin';
 
@@ -19,7 +22,7 @@ export function renderHub() {
   $('#hub').innerHTML = `
     <div class="hero">
       <div class="rays" aria-hidden="true"></div>
-      <div class="hero-top"><span class="chip">${ready.length} ігор</span><button id="noads" class="btn ghost sm">Без реклами</button></div>
+      <div class="hero-top"><button id="prof" class="chip">${myNick() ? esc(myNick()) : 'Профіль'}</button><button id="noads" class="btn ghost sm">Без реклами</button></div>
       <h1 class="logo" aria-label="PlayBox"><span>Play</span><span>Box</span></h1>
       <p class="sub">Головоломки на хвилинку. Без реєстрації, прогрес зберігається.</p>
     </div>
@@ -30,7 +33,7 @@ export function renderHub() {
       <div class="grid">${ready.filter(g => g !== last).map(g => card(g)).join('')}</div>
       ${soon.length ? `<h2 class="sec">Скоро</h2><div class="grid">${soon.map(g => card(g)).join('')}</div>` : ''}
     </div>`;
-  $('#noads').onclick = buyNoAds;
+  $('#noads').onclick = buyNoAds; $('#prof').onclick = () => profileSheet();
   $$('#hub .card').forEach(b => b.onclick = () => {
     const g = GAMES.find(x => x.id === b.dataset.id)!;
     g.load ? (location.hash = g.id) : toast(`«${g.name}» ще в роботі`);

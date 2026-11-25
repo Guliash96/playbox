@@ -10,6 +10,7 @@ import { Ads } from '../core/ads';
 import { done } from '../core/flow';
 import { Stage, THREE, mat, mesh } from '../core/three';
 import { crowdGeometry, labelTexture } from '../art/people3d';
+import { Score } from '../core/score';
 import type { Game } from './registry';
 
 const MAXV = 160, SPEED = 7, HALF = 2.6;
@@ -106,12 +107,11 @@ const Crowd: Game & Record<string, any> = {
     this.t = (this.t || 0) + dt;
     if (this.state === 'run' && !this.fight) {
       const dz = SPEED * dt; this.z += dz;
-      for (const p of this.pairs) p.o.position.z += dz; for (const h of this.hordes) { h.z += dz; h.mesh.position.z += dz; } this.finish.position.z += dz;
+      for (const p of this.pairs) { p.o.position.z += dz; if (p.o.position.z > 14) p.o.visible = false; } for (const h of this.hordes) { h.z += dz; h.mesh.position.z += dz; } this.finish.position.z += dz;
       this.x += (this.tx - this.x) * Math.min(1, dt * 10);
       for (const p of this.pairs) if (!p.done && p.o.position.z > 0) {
         p.done = true; const op = p.ops[this.x < 0 ? 0 : 1], before = this.n; this.n = Math.min(999, apply(this.n, op));
-        this.pop(this.n > before ? '+' + (this.n - before) : this.n < before ? '−' + (before - this.n) : '0', this.n >= before); haptic(this.n >= before ? 'ok' : 'err');
-        p.o.visible = false;
+        this.pop(this.n > before ? '+' + (this.n - before) : this.n < before ? '−' + (before - this.n) : '0', this.n >= before); haptic(this.n >= before ? 'ok' : 'err'); good(op) ? Score.good(10) : Score.bad();
         if (this.n <= 0) return this.lose();
       }
       for (const h of this.hordes) if (!h.done && h.z > -.6) { this.fight = h; this.fightT = 0; }
@@ -122,7 +122,7 @@ const Crowd: Game & Record<string, any> = {
       if (this.fightT > .05) {
         this.fightT = 0; const h: Horde = this.fight, k = Math.max(1, Math.round(Math.min(this.n, h.n) / 12));
         this.n = Math.max(0, this.n - k); h.n = Math.max(0, h.n - k); h.mesh.count = Math.min(h.n, MAXV); haptic();
-        if (h.n <= 0) { h.done = true; this.fight = null; this.hud(); }
+        if (h.n <= 0) { h.done = true; this.fight = null; this.hud(); Score.add(h.mesh.userData.n * 3); }
         else if (this.n <= 0) { this.fight = null; return this.lose(); }
       }
     }

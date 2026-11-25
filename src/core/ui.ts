@@ -20,7 +20,9 @@ export function toast(t: string) {
 
 export const setStats = (h: string) => { $('#stats').innerHTML = h; };
 export type Tool = [string, () => void, boolean?];
+export const extraTool: { fn: (() => void) | null } = { fn: null };
 export function setTools(list: Tool[]) {
+  if (extraTool.fn) list = [...list, ['Топ', extraTool.fn]];
   const t = $('#tools');
   t.innerHTML = list.map((x, i) => `<button class="btn sm ${x[2] ? '' : 'ghost'}" data-t="${i}">${x[0]}</button>`).join('');
   $$('[data-t]', t).forEach(b => b.onclick = () => list[+b.dataset.t!][1]());

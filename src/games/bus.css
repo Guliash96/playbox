@@ -10,7 +10,7 @@
 .stop::before{content:"";position:absolute;left:-8px;right:-8px;top:38px;border-top:3px dashed #ffd23f;opacity:.7}
 .busEl{position:relative;transform-origin:bottom}
 .busEl svg{height:64px;width:auto;display:block}
-.busEl.enter{animation:busIn .5s cubic-bezier(.2,.8,.3,1)}
+.busEl.enter{animation:busIn .8s cubic-bezier(.2,.8,.3,1)}
 @keyframes busIn{from{transform:translateX(-120vw)}85%{transform:translateX(6px)}}
 .plat{display:flex;justify-content:center;gap:6px;padding:10px 8px;background:repeating-linear-gradient(90deg,#e9e2d3 0 30px,#ddd5c3 30px 32px);border:3px solid #1b1b1f;border-top:6px solid #ffd23f}
 .plat .slot{width:min(46px,calc((100vw - 70px)/5));aspect-ratio:1;border-radius:12px;border:2px dashed rgba(0,0,0,.3);display:flex;background:rgba(255,255,255,.35)}

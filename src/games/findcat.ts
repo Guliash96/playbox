@@ -7,6 +7,7 @@ import { setStats, setTools, pill } from '../core/ui';
 import { Ads } from '../core/ads';
 import { done } from '../core/flow';
 import { catHead } from '../art/cat';
+import { Score } from '../core/score';
 import type { Game } from './registry';
 
 const BOOK = ['#7b2d26', '#2f4b7c', '#3f6b4a', '#a8742a', '#5b3a6e', '#8c8c8c', '#c2553b', '#d9c7a0', '#24435a', '#6e4b2a'];
@@ -88,8 +89,8 @@ const FindCat: Game & Record<string, any> = {
     const pt = this.svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
     const p = pt.matrixTransform(this.svg.getScreenCTM().inverse());
     const i = this.cats.findIndex((c: any) => !c.f && Math.hypot(c.x - p.x, c.y - p.y) < c.r * 1.8);
-    if (i < 0) { haptic('err'); const m = this.add('circle', { cx: p.x, cy: p.y, r: 4, class: 'miss' }); setTimeout(() => m.remove(), 600); return; }
-    const c = this.cats[i]; c.f = true; this.found++; haptic('ok');
+    if (i < 0) { haptic('err'); Score.bad(); const m = this.add('circle', { cx: p.x, cy: p.y, r: 4, class: 'miss' }); setTimeout(() => m.remove(), 600); return; }
+    const c = this.cats[i]; c.f = true; this.found++; haptic('ok'); Score.good(25);
     this.svg.querySelector('#cat' + i).classList.add('found');
     this.add('circle', { cx: c.x, cy: c.y - c.r * .3, r: c.r * 1.75, class: 'ring' });
     for (let k = 0; k < 3; k++) { const h = this.add('text', { x: c.x - 8 + k * 8, y: c.y - c.r * 1.6, class: 'heart', style: `animation-delay:${k * 90}ms`, 'font-size': 10 }, '♥'); setTimeout(() => h.remove(), 1200); }

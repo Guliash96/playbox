@@ -9,6 +9,7 @@ import { Ads } from '../core/ads';
 import { done, outOfHearts } from '../core/flow';
 import { Stage, THREE, RoundedBoxGeometry, mat, ease } from '../core/three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { Score } from '../core/score';
 import type { Game } from './registry';
 
 type V = [number, number, number];
@@ -120,14 +121,14 @@ const Cube: Game & Record<string, any> = {
     const st: Stage = this.st, { dist, hit } = this.ahead(b), dv = new THREE.Vector3(...DIRS[b.d]), g = b.g!, home = g.userData.home as THREE.Vector3;
     b.busy = true;
     if (!hit) {
-      b.gone = true; haptic(); this.hud();
+      b.gone = true; haptic(); this.hud(); Score.good(10);
       st.tween(560, k => { g.position.copy(home).addScaledVector(dv, 9 * ease.in(k)); b.m!.opacity = 1 - ease.in(k); g.children[1].visible = k < .6; }).then(() => this.root.remove(g));
       if (this.blocks.every((k: B) => k.gone)) done('cb_lvl', this.lvl, () => this.load());
       return;
     }
     const go = dist + .08;
     await st.tween(120 + dist * 80, k => g.position.copy(home).addScaledVector(dv, go * ease.in(k)));
-    haptic('err'); this.hp--; this.hud();
+    haptic('err'); this.hp--; this.hud(); Score.bad();
     const hg = hit.g!, hh = hg.userData.home as THREE.Vector3, hm = hit.m!;
     st.tween(380, k => { const s = Math.sin(k * Math.PI * 4) * (1 - k); hg.position.copy(hh).addScaledVector(dv, s * .1); hm.emissive.setRGB(.5 * (1 - k), .2 * (1 - k), .2 * (1 - k)); });
     await st.tween(200 + dist * 60, k => g.position.copy(home).addScaledVector(dv, go * (1 - ease.out(k))));
