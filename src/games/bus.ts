@@ -1,148 +1,187 @@
-// Bus station: groups of 5 passengers stand in a queue yard. Tap a group with a free path to the
-// platform: it walks out. Same colour as the bus at the stop → boards, otherwise waits on the platform.
-// A bus holds 2–4 groups (10–20 people); when full it leaves and the next one pulls in.
+// Bus station (3D). Passengers stand in queues (columns of groups of 5) that run off the bottom of the screen.
+// Tap a queue: its front group walks out. Same colour as the bus at the stop → boards, otherwise waits on one of
+// 5 platform spots. The queue steps forward. A bus takes 2–4 groups (10–20 people), then drives off.
 import './bus.css';
-import { R, pick, shuffle, sleep } from '../core/util';
+import { R, pick, shuffle } from '../core/util';
 import { store } from '../core/store';
 import { haptic } from '../core/platform';
 import { setStats, setTools, modal, pill, flash } from '../core/ui';
 import { Ads } from '../core/ads';
 import { done } from '../core/flow';
-import { busSVG, crowd } from '../art/bus';
 import { Score } from '../core/score';
+import { t } from '../core/i18n';
+import { Stage, THREE, RoundedBoxGeometry, mat, mesh, ease } from '../core/three';
+import { CrowdMesh, numberSprite, setSpriteText } from '../art/people3d';
+import { busSVG } from '../art/bus';
 import type { Game } from './registry';
 
-const BUSC = ['#ff3d7f', '#2f9bff', '#ffb020', '#7b5cff', '#e8443a', '#18b5c4'];
-const HOLD = 5;
+const COLS = ['#ff3d7f', '#2f9bff', '#ffb020', '#7b5cff', '#2fbf71', '#18b5c4'];
+const HOLD = 5, CELL = 1.3, FRONT = -2.6, PLAT = -4.1, ROADZ = -5.9, SLOTW = 1.45;
+const OFF: [number, number][] = [[-.28, -.26], [.28, -.26], [-.28, .26], [.28, .26], [0, 0]];
+interface Pp { x: number; z: number; way: [number, number][]; hide?: boolean; ph: number }
+interface Grp { c: number; people: number[] }
 
-function nbrs(i: number, W: number, H: number) { const r = Math.floor(i / W), c = i % W; return [[i - W, r > 0], [i + W, r < H - 1], [i - 1, c > 0], [i + 1, c < W - 1]].filter(x => x[1]).map(x => x[0] as number); }
-/** a group can leave only if every cell above it in its column is empty (queues are columns) */
-function pathOut(g: number[], W: number, _H: number, s: number): number[] | null {
-  const c = s % W, p = [s];
-  for (let y = Math.floor(s / W) - 1; y >= 0; y--) { const j = y * W + c; if (g[j] !== 0) return null; p.push(j); }
-  return p;
+function generate(W: number, buses: number, k: number, nc: number) {
+  const seq: number[] = []; let prev = -1;
+  for (let b = 0; b < buses; b++) { let c; do c = R(nc); while (c === prev && nc > 1); prev = c; seq.push(c); }
+  const order: number[] = []; seq.forEach(c => { for (let j = 0; j < k; j++) order.push(c); });
+  // a few local swaps so the platform has to be used, still solvable with 5 spots
+  for (let i = 0; i < order.length - 2; i++) if (Math.random() < .25) [order[i], order[i + 2]] = [order[i + 2], order[i]];
+  const cols: number[][] = Array.from({ length: W }, () => []);
+  // appending in global order keeps every column FIFO-consistent with that order
+  order.forEach(c => cols[R(W)].push(c));
+  return { seq, cols };
 }
-function generate(W: number, H: number, nc: number, k: number) {
-  // random legal removal order, coloured in chunks of k → bus sequence; solvable with an empty platform
-  for (let t = 0; t < 300; t++) {
-    const N = W * H, g = Array(N).fill(1);
-    let em = g.filter(x => x > 0).length % k + 2; for (const i of shuffle([...Array(N).keys()])) if (em && g[i] > 0) { g[i] = 0; em--; }
-    const sim = g.slice(), order: number[] = [];
-    for (; ;) { const acc = sim.map((v, i) => i).filter(i => sim[i] > 0 && pathOut(sim, W, H, i)); if (!acc.length) break; const i = pick(acc); order.push(i); sim[i] = 0; }
-    if (sim.some(x => x > 0)) continue;
-    const buses: number[] = []; let prev = -1;
-    for (let b = 0; b < order.length / k; b++) { let c; do c = R(nc); while (c === prev && nc > 1); prev = c; buses.push(c); for (let j = 0; j < k; j++) g[order[b * k + j]] = c + 1; }
-    return { g, buses };
-  }
-  throw new Error('bus gen');
+
+function busModel(col: string, k: number) {
+  const g = new THREE.Group(), L = 2.4 + k * .95, body = mat(col, { roughness: .35, metalness: .1 }), glass = mat(0x22364f, { roughness: .1, metalness: .4 });
+  const add = (m: THREE.Mesh, x: number, y: number, z = 0) => { m.position.set(x, y, z); g.add(m); return m; };
+  add(mesh(new RoundedBoxGeometry(L, 1.25, 1.35, 3, .22), body), 0, .95);
+  add(mesh(new RoundedBoxGeometry(L - .1, .12, 1.37, 2, .05), mat(0xffffff)), 0, 1.6);
+  add(mesh(new RoundedBoxGeometry(L - .7, .48, 1.38, 2, .08), glass), -.15, 1.18);
+  add(mesh(new RoundedBoxGeometry(.08, .6, 1.2, 2, .03), glass), L / 2, 1.12);
+  add(mesh(new RoundedBoxGeometry(.5, .95, .04, 2, .02), mat(0x9fd4f0, { roughness: .2 })), L / 2 - .55, .85, .69);
+  add(mesh(new THREE.BoxGeometry(L, .14, 1.38), mat(new THREE.Color(col).multiplyScalar(.7))), 0, .4);
+  for (const x of [L / 2 - .6, -L / 2 + .6]) for (const z of [.6, -.6]) { const w = add(mesh(new THREE.CylinderGeometry(.3, .3, .2, 16).rotateX(Math.PI / 2), mat(0x1e1e22, { roughness: .9 })), x, .3, z); w.castShadow = true; add(mesh(new THREE.CylinderGeometry(.13, .13, .21, 10).rotateX(Math.PI / 2), mat(0xd9dde3, { metalness: .6 })), x, .3, z); }
+  for (const z of [.4, -.4]) add(mesh(new THREE.BoxGeometry(.04, .14, .22), mat(0xfff3b0, { emissive: 0xffe680, emissiveIntensity: .8 }), false), L / 2 + .01, .55, z);
+  g.userData.L = L; return g;
 }
 
 const Bus: Game & Record<string, any> = {
   title: 'Автобуси', theme: 'th-bus',
-  start(el: HTMLElement) { this.el = el; this.load(); this.ro = new ResizeObserver(() => this.layout()); this.ro.observe(el); },
-  stop() { this.ro?.disconnect(); this.dead = true; document.querySelectorAll('.walker').forEach(g => g.remove()); },
+  start(el: HTMLElement) {
+    this.el = el; el.innerHTML = '<div class="nextq"></div>';
+    const st: Stage = this.st = new Stage(el, { fov: 40, shadows: true, clear: 0xbfe3ff });
+    st.lights(new THREE.Vector3(-4, 16, 6), 12);
+    const sc = st.scene;
+    const grass = mesh(new THREE.PlaneGeometry(80, 80).rotateX(-Math.PI / 2), mat(0x8cc063, { roughness: 1 }), false); grass.position.set(0, -.02, 10); sc.add(grass);
+    const road = mesh(new THREE.PlaneGeometry(60, 2.4).rotateX(-Math.PI / 2), mat(0x4a4f57, { roughness: .95 }), false); road.position.set(0, 0, ROADZ); sc.add(road);
+    for (let x = -30; x < 30; x += 2) { const d = mesh(new THREE.BoxGeometry(1, .01, .1), mat(0xffd23f), false); d.position.set(x, .01, ROADZ - .1); sc.add(d); }
+    const plat = mesh(new RoundedBoxGeometry(60, .18, 1.6, 2, .05), mat(0xe9e2d3, { roughness: .9 }), false); plat.position.set(0, .09, PLAT); sc.add(plat);
+    const curb = mesh(new THREE.BoxGeometry(60, .2, .14), mat(0xffd23f), false); curb.position.set(0, .1, PLAT - .82); sc.add(curb);
+    const yard = mesh(new THREE.PlaneGeometry(60, 60).rotateX(-Math.PI / 2), mat(0xcfc6b4, { roughness: .95 }), false); yard.position.set(0, .005, PLAT + .8 + 30); sc.add(yard);
+    for (let k = 0; k < 8; k++) { const tr = new THREE.Group(), tk = mesh(new THREE.CylinderGeometry(.1, .14, .7, 6), mat(0x6b4429)); tk.position.y = .35; tr.add(tk); for (let j = 0; j < 3; j++) { const b = mesh(new THREE.IcosahedronGeometry(.5 - j * .1, 1), mat(0x4f8a46, { roughness: .9 })); b.position.set((Math.random() - .5) * .3, .9 + j * .35, 0); tr.add(b); } tr.position.set((k % 2 ? -1 : 1) * (6.5 + Math.random() * 3), 0, ROADZ - 2.2 - Math.random() * 2 + (k > 3 ? 0 : 0)); sc.add(tr); }
+    this.slotM = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: .55 });
+    this.st.onResize = () => this.frameCam(); st.onFrame = (dt: number) => this.frame(dt);
+    el.onpointerdown = (e: PointerEvent) => this.pointer(e);
+    this.load();
+  },
+  stop() { this.st?.dispose(); this.dead = true; },
+  frameCam() {
+    const c = this.st.camera, w = Math.max((this.W || 5) * CELL + 1.4, HOLD * SLOTW + 1), half = Math.tan(c.fov * Math.PI / 360);
+    const d = Math.max(w / 2 / (half * c.aspect), 7) * .98; c.position.set(0, d * .72, d * .7 - .4); c.lookAt(0, 0, -2.4);
+  },
   load() {
-    document.querySelectorAll('.walker').forEach(g => g.remove());
+    const sc = this.st.scene; this.dead = false;
+    for (const o of this.temp || []) sc.remove(o); this.temp = [];
+    this.crowd?.dispose(sc); this.bus && sc.remove(this.bus);
     const L = this.lvl = store.get('bj_lvl', 1);
-    this.W = Math.min(7, 5 + Math.floor(L / 4)); this.H = Math.min(8, 5 + Math.floor(L / 2));
-    this.k = L < 4 ? 2 : L < 8 ? 3 : 4;
-    const r = generate(this.W, this.H, Math.min(6, 3 + Math.floor(L / 3)), this.k);
-    this.g = r.g; this.buses = r.buses; this.bi = 0; this.seats = 0; this.seated = 0; this.ready = false;
-    this.hold = [] as { c: number; here: boolean }[]; this.cap = HOLD; this.cont = false; this.dead = false; this.over = false;
-    this.el.innerHTML = `<div class="station"><div class="road"><div class="nextq"></div><div class="stop"></div></div><div class="plat"></div><div class="yard"></div></div>`;
-    this.layout(); this.renderBus(true); setTimeout(() => { this.ready = true; }, 450);
-    setTools([['Заново', () => this.load()]]);
+    this.W = Math.min(6, 4 + Math.floor(L / 3)); this.k = L < 4 ? 2 : L < 8 ? 3 : 4;
+    const g = generate(this.W, 7 + L, this.k, Math.min(6, 3 + Math.floor(L / 3)));
+    this.buses = g.seq; this.bi = 0; this.seats = 0; this.seated = 0; this.ready = false; this.over = false; this.cont = false; this.cap = HOLD;
+    this.hold = [] as ({ g: Grp; here: boolean } | null)[];
+    const total = g.cols.reduce((s, c) => s + c.length, 0) * 5;
+    this.crowd = new CrowdMesh(total, sc, 'human'); this.pp = [] as Pp[];
+    this.cols = g.cols.map((col, ci) => col.map((c, k) => {
+      const people = OFF.map(([ox, oz]) => { const i = this.pp.length; const [x, z] = this.cellPos(ci, k); this.pp.push({ x: x + ox, z: z + oz, way: [], ph: Math.random() * 6 }); this.crowd.color(i, COLS[c]); return i; });
+      return { c, people } as Grp;
+    }));
+    this.crowd.count = total;
+    // platform spots + column marks
+    for (let i = 0; i < HOLD + 2; i++) { const s = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.1).rotateX(-Math.PI / 2), this.slotM); s.position.set(this.slotX(i), .19, PLAT + .1); s.visible = i < this.cap; sc.add(s); this.temp.push(s); }
+    for (let c = 0; c < this.W; c++) { const l = mesh(new THREE.PlaneGeometry(1.1, 40).rotateX(-Math.PI / 2), mat(0xbfb6a2, { roughness: 1 }), false); l.position.set(this.colX(c), .01, FRONT + 20 - .6); sc.add(l); this.temp.push(l); }
+    this.frameCam(); this.arrive(); this.hud();
+    setTools([['Заново', () => { Score.commit(); this.load(); }]]);
   },
-  layout() {
-    const st = this.el.querySelector('.station'); if (!st) return;
-    const sw = this.el.clientWidth - 24, sh = this.el.clientHeight - 104 - 84 - 44;
-    const cs = this.cs = Math.floor(Math.min(58, sw / this.W, sh / this.H));
-    st.style.setProperty('--cs', cs + 'px'); st.style.width = Math.max(cs * this.W + 16, Math.min(sw, 360)) + 'px';
-    this.renderHold(); this.renderYard(); this.hud();
+  colX(c: number) { return (c - (this.W - 1) / 2) * CELL; },
+  cellPos(c: number, k: number): [number, number] { return [this.colX(c), FRONT + k * CELL]; },
+  slotX(i: number) { return (i - (HOLD - 1) / 2) * SLOTW; },
+  hud() {
+    setStats(`${pill('Рів. ' + this.lvl)}${pill(t('Бус {0}/{1}', Math.min(this.bi + 1, this.buses.length), this.buses.length))}`);
+    const q = this.el.querySelector('.nextq'); if (q) q.innerHTML = `<span>${t('Далі:')}</span>` + this.buses.slice(this.bi + 1, this.bi + 5).map((b: number) => `<i>${busSVG(COLS[b], this.k, [])}</i>`).join('');
   },
-  hud() { setStats(`${pill('Рів. ' + this.lvl)}${pill(`Бус ${Math.min(this.bi + 1, this.buses.length)}/${this.buses.length}`)}`); },
-  renderBus(enter = false) {
-    const stop = this.el.querySelector('.stop'), c = this.buses[this.bi];
-    this.el.querySelector('.nextq').innerHTML = `<span class="lbl">Далі:</span>` + this.buses.slice(this.bi + 1, this.bi + 5).map((b: number) => `<span class="mini">${busSVG(BUSC[b], this.k, [])}</span>`).join('');
-    if (c == null) { stop.innerHTML = ''; return; }
-    const filled = Array.from({ length: this.k }, (_, i) => i < this.seated ? BUSC[c] : null);
-    const html = busSVG(BUSC[c], this.k, filled, `${this.seated * 5}/${this.k * 5}`);
-    const cur = stop.querySelector('.busEl');
-    if (cur && !enter) { cur.innerHTML = html; return; }
-    stop.innerHTML = `<div class="busEl${enter ? ' enter' : ''}">${html}</div>`;
+  // ---------- buses ----------
+  arrive() {
+    const sc = this.st.scene, c = this.buses[this.bi]; if (c == null) return;
+    const b = this.bus = busModel(COLS[c], this.k); b.position.set(-16, 0, ROADZ); sc.add(b);
+    this.tag = numberSprite(`0/${this.k * 5}`, '#1b1b1f', 1.3); this.tag.position.set(0, 2.4, 0); b.add(this.tag);
+    this.seats = 0; this.seated = 0; this.ready = false;
+    this.st.tween(1100, k => { b.position.x = -16 + 16 * ease.out(k); }).then(() => { if (this.dead) return; this.ready = true; this.autoBoard(); });
   },
-  renderHold() {
-    this.el.querySelector('.plat').innerHTML = Array.from({ length: this.cap }, (_, i) =>
-      `<i class="slot">${this.hold[i]?.here ? crowd(BUSC[this.hold[i].c]) : ''}</i>`).join('');
+  door() { const b = this.bus; return b ? [b.position.x + b.userData.L / 2 - .55, ROADZ + .85] as [number, number] : [0, ROADZ + .8] as [number, number]; },
+  async depart() {
+    this.ready = false; haptic('ok'); const b = this.bus;
+    await this.st.tween(1200, k => { b.position.x = 18 * ease.in(k); });
+    if (this.dead) return; this.st.scene.remove(b); this.bus = null;
+    this.bi++; this.hud();
+    if (this.bi >= this.buses.length) { this.over = true; return done('bj_lvl', this.lvl, () => this.load()); }
+    this.arrive();
   },
-  renderYard() {
-    const y = this.el.querySelector('.yard');
-    y.style.gridTemplateColumns = `repeat(${this.W},var(--cs))`;
-    y.innerHTML = this.g.map((v: number, i: number) => v < 0 ? '<i class="w"></i>' : v === 0 ? '<i class="e"></i>' :
-      `<button data-i="${i}" class="${pathOut(this.g, this.W, this.H, i) ? '' : 'lock'}" aria-label="група з 5 пасажирів">${crowd(BUSC[v - 1])}</button>`).join('');
-    y.querySelectorAll('button').forEach((b: HTMLElement) => b.onpointerdown = (e: Event) => { e.preventDefault(); this.tap(+b.dataset.i!); });
-  },
-  center(el: Element) { const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; },
-  walk(pts: number[][], color: string, ms: number[]) {
-    const cs = this.cs, gh = document.createElement('div'); gh.className = 'walker';
-    gh.style.cssText = `width:${cs}px;height:${cs}px;left:${pts[0][0] - cs / 2}px;top:${pts[0][1] - cs / 2}px`;
-    gh.innerHTML = crowd(color); document.body.appendChild(gh);
-    const total = ms.reduce((a, b) => a + b, 0); let acc = 0;
-    const kf = pts.map(([x, y], i) => { const o: Keyframe = { transform: `translate(${x - pts[0][0]}px,${y - pts[0][1]}px)`, offset: total ? acc / total : 0 }; acc += ms[i] || 0; return o; });
-    kf[kf.length - 1].offset = 1;
-    return gh.animate(kf, { duration: total, easing: 'linear', fill: 'forwards' }).finished.catch(() => { }).then(() => gh.remove());
-  },
-  doorPt() { const b = this.el.querySelector('.busEl')?.getBoundingClientRect(); return b ? [b.left + b.width * .78, b.top + b.height * .55] : [innerWidth / 2, 120]; },
-  /** several groups can walk at once; seats/hold places are reserved at tap time */
-  tap(i: number) {
-    if (this.dead || this.over) return;
-    const path = pathOut(this.g, this.W, this.H, i), btn = this.el.querySelector(`[data-i="${i}"]`);
-    if (!path) { haptic('err'); return flash(btn, 'shake'); }
-    const col = this.g[i] - 1, toBus = this.ready && col === this.buses[this.bi] && this.seats < this.k;
-    if (!toBus && this.hold.length >= this.cap) { haptic('err'); return flash(this.el.querySelector('.plat'), 'shake'); }
-    haptic();
-    const cells = this.el.querySelector('.yard').children;
-    const pts = path.map(j => this.center(cells[j])), top = pts[pts.length - 1]; pts.push([top[0], top[1] - this.cs * .9]);
-    let slot: { c: number; here: boolean } | null = null;
-    if (toBus) { this.seats++; pts.push(this.doorPt()); Score.good(10); }
-    else { Score.bad(); slot = { c: col, here: false }; this.hold.push(slot); pts.push(this.center(this.el.querySelectorAll('.plat .slot')[this.hold.length - 1])); }
-    this.g[i] = 0; this.renderYard();
-    this.walk(pts, BUSC[col], [...path.map(() => 70), 140, 230]).then(() => {
-      if (this.dead) return;
-      if (toBus) { this.seated++; this.renderBus(); this.maybeDepart(); }
-      else { slot!.here = true; this.renderHold(); this.checkFail(); }
-    });
-  },
-  async maybeDepart() {
-    if (!this.ready || this.seats < this.k || this.seated < this.k) return;
-    this.ready = false; haptic('ok');
-    const b = this.el.querySelector('.busEl');
-    await b.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(120vw)' }], { duration: 1000, easing: 'cubic-bezier(.5,0,.9,.6)', fill: 'forwards' }).finished.catch(() => { });
-    if (this.dead) return;
-    this.bi++; this.seats = 0; this.seated = 0; this.hud();
-    if (this.bi >= this.buses.length) { this.renderBus(); this.over = true; return done('bj_lvl', this.lvl, () => this.load()); }
-    this.renderBus(true); await sleep(820); if (this.dead) return;
-    this.ready = true;
-    // groups waiting on the platform board the new bus automatically
+  autoBoard() {
     const c = this.buses[this.bi];
-    for (const h of this.hold.filter((h: any) => h.here && h.c === c)) {
-      if (this.seats >= this.k) break;
-      const from = this.center(this.el.querySelectorAll('.plat .slot')[this.hold.indexOf(h)]);
-      this.hold.splice(this.hold.indexOf(h), 1); this.seats++; this.renderHold();
-      this.walk([from, this.doorPt()], BUSC[c], [0, 260]).then(() => { if (this.dead) return; this.seated++; this.renderBus(); this.maybeDepart(); });
-      await sleep(90);
-    }
+    this.hold.forEach((h: any, i: number) => {
+      if (!h || !h.here || h.g.c !== c || this.seats >= this.k) return;
+      this.hold[i] = null; this.seats++; this.walkGroup(h.g, [[this.door()[0], PLAT + .2], this.door()], () => this.boarded());
+    });
     this.checkFail();
   },
-  checkFail() {
-    if (!this.ready || this.over || this.hold.length < this.cap || this.hold.some((h: any) => !h.here || h.c === this.buses[this.bi])) return;
-    this.over = true; setTimeout(() => this.fail(), 250);
+  boarded() { this.seated++; setSpriteText(this.tag, `${this.seated * 5}/${this.k * 5}`); if (this.seated >= this.k && this.seats >= this.k) this.depart(); },
+  // ---------- people ----------
+  walkGroup(g: Grp, way: [number, number][], onDone: () => void, hideAtEnd = true) {
+    let left = g.people.length;
+    g.people.forEach((i, j) => { const [ox, oz] = OFF[j]; const p: Pp = this.pp[i]; p.way = way.map(([x, z], n) => [x + ox * (n === way.length - 1 && !hideAtEnd ? 1 : .6), z + oz * .6]); p.hide = false; (p as any).done = () => { if (hideAtEnd) p.hide = true; if (--left === 0) onDone(); }; });
   },
-  fail() {
+  pointer(e: PointerEvent) {
+    if (this.over || this.dead) return;
+    const r = this.st.renderer.domElement.getBoundingClientRect(), v = new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1);
+    this.st.ray.setFromCamera(v, this.st.camera); const hit = new THREE.Vector3();
+    if (!this.st.ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), hit)) return;
+    if (hit.z < FRONT - .8) return;
+    const ci = Math.round(hit.x / CELL + (this.W - 1) / 2); if (ci < 0 || ci >= this.W) return;
+    this.tap(ci);
+  },
+  tap(ci: number) {
+    const col: Grp[] = this.cols[ci]; if (!col.length) return;
+    const g = col[0], toBus = this.ready && g.c === this.buses[this.bi] && this.seats < this.k;
+    const free = this.hold.findIndex((h: any, i: number) => !h && i < this.cap), slot = free >= 0 ? free : (this.hold.length < this.cap ? this.hold.length : -1);
+    if (!toBus && slot < 0) { haptic('err'); flash(this.st.renderer.domElement, 'shake'); return; }
+    col.shift(); haptic();
+    const [x] = this.cellPos(ci, 0);
+    if (toBus) { this.seats++; Score.good(10); this.walkGroup(g, [[x, PLAT + .3], [this.door()[0], PLAT + .2], this.door()], () => this.boarded()); }
+    else {
+      Score.bad(); const h = { g, here: false }; this.hold[slot] = h;
+      this.walkGroup(g, [[x, PLAT + .3], [this.slotX(slot), PLAT + .1]], () => { h.here = true; this.checkFail(); }, false);
+    }
+    // the queue steps forward
+    col.forEach((gg, k) => gg.people.forEach((i, j) => { const [cx, cz] = this.cellPos(ci, k); this.pp[i].way = [[cx + OFF[j][0], cz + OFF[j][1]]]; }));
+    this.hud();
+  },
+  checkFail() {
+    if (this.over || !this.ready) return;
+    const used = this.hold.filter(Boolean), c = this.buses[this.bi];
+    if (used.length < this.cap || used.some((h: any) => !h.here || h.g.c === c)) return;
+    if (this.cols.some((col: Grp[]) => col.length && col[0].c === c)) return;
+    this.over = true; haptic('err');
     const b: any[] = [];
-    if (!this.cont) b.push(['Реклама: +1 місце на платформі', () => Ads.rewarded(() => { this.cont = true; this.over = false; this.cap++; this.renderHold(); })]);
-    b.push(['Почати заново', () => this.load()]);
-    modal('<h2>Платформа переповнена</h2><p class="muted">Усі місця очікування зайняті.</p>', b);
+    if (!this.cont) b.push(['Реклама: +1 місце на платформі', () => Ads.rewarded(() => { this.cont = true; this.over = false; this.cap++; this.temp[this.cap - 1].visible = true; })]);
+    b.push(['Почати заново', () => { Score.commit(); this.load(); }]);
+    setTimeout(() => modal(`<h2>${t('Платформа переповнена')}</h2><p class="muted">${t('Усі місця очікування зайняті.')}</p>`, b), 300);
+  },
+  frame(dt: number) {
+    if (!this.crowd) return;
+    const spd = 4.2, T = performance.now() / 1000;
+    this.pp.forEach((p: Pp, i: number) => {
+      let moving = false;
+      if (p.way.length) {
+        const [tx, tz] = p.way[0], dx = tx - p.x, dz = tz - p.z, d = Math.hypot(dx, dz), s = spd * dt;
+        if (d <= s) { p.x = tx; p.z = tz; p.way.shift(); if (!p.way.length) (p as any).done?.(), (p as any).done = null; }
+        else { p.x += dx / d * s; p.z += dz / d * s; moving = true; }
+      }
+      if (p.hide) { this.crowd.pose(i, 0, -50, 0, 0, .01); return; }
+      const ry = moving ? Math.atan2(p.way[0] ? p.way[0][0] - p.x : 0, p.way[0] ? p.way[0][1] - p.z : 1) : Math.PI;
+      this.crowd.pose(i, p.x, moving ? Math.abs(Math.sin(T * 14 + p.ph)) * .08 : 0, p.z, ry, .58, moving ? .15 : 0);
+    });
+    this.crowd.commit();
   },
 };
 export default Bus;

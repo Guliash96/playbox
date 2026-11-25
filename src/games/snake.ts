@@ -24,14 +24,18 @@ interface Sn { c: string; n: number }
 interface Run { sn: Sn; s: number; segs: HTMLElement[]; head: HTMLElement; next: number }
 const SPEED = 11, GAP = .62, MAXRUN = 4;
 
-const coilSVG = (col: string) => {
-  const d = shade(col, -.3), l = shade(col, .35);
-  return `<svg viewBox="0 0 48 48"><ellipse cx="24" cy="40" rx="17" ry="5" fill="#000" opacity=".2"/>
-  <path d="M24 38c-9 0-15-5-15-12s6-12 14-12 12 4 12 9-4 8-9 8-7-3-7-6 2-4 5-4" fill="none" stroke="${d}" stroke-width="9" stroke-linecap="round"/>
-  <path d="M24 38c-9 0-15-5-15-12s6-12 14-12 12 4 12 9-4 8-9 8-7-3-7-6 2-4 5-4" fill="none" stroke="${col}" stroke-width="7" stroke-linecap="round"/>
-  <path d="M15 22c2-4 6-6 10-6" fill="none" stroke="${l}" stroke-width="2" stroke-linecap="round" opacity=".8"/>
-  <circle cx="35" cy="34" r="7.5" fill="${col}" stroke="${d}" stroke-width="1.5"/><circle cx="33" cy="32" r="2.4" fill="#fff"/><circle cx="37.5" cy="32" r="2.4" fill="#fff"/><circle cx="33.4" cy="32.3" r="1.2" fill="#1b1b1f"/><circle cx="37.9" cy="32.3" r="1.2" fill="#1b1b1f"/></svg>`;
-};
+/** speckled egg the snake hatches from */
+const eggSVG = (col: string) => { const d = shade(col, -.3), l = shade(col, .45); return `<svg viewBox="0 0 48 56"><ellipse cx="24" cy="52" rx="15" ry="3.5" fill="#000" opacity=".2"/>
+  <path d="M24 4C13 4 6 22 6 34c0 11 8 18 18 18s18-7 18-18C42 22 35 4 24 4z" fill="${col}" stroke="${d}" stroke-width="2"/>
+  <circle cx="16" cy="28" r="3" fill="${d}" opacity=".45"/><circle cx="31" cy="20" r="2.5" fill="${d}" opacity=".45"/><circle cx="29" cy="40" r="3.5" fill="${d}" opacity=".45"/><circle cx="18" cy="43" r="2" fill="${d}" opacity=".45"/>
+  <path d="M14 18c2-6 5-9 9-10" stroke="${l}" stroke-width="3.5" stroke-linecap="round" fill="none" opacity=".9"/></svg>`; };
+/** cartoon boa head, facing right */
+const headSVG = (col: string) => { const d = shade(col, -.35), l = shade(col, .4); return `<svg viewBox="0 0 60 50" class="boa"><path class="tongue" d="M50 27h9l3-3M59 27l3 3" stroke="#e8324a" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+  <path d="M6 25C6 10 20 4 34 6c12 2 19 9 19 19s-7 17-19 19C20 46 6 40 6 25z" fill="${col}" stroke="${d}" stroke-width="2.5"/>
+  <path d="M14 30c8 6 22 7 34 1" stroke="${d}" stroke-width="2" fill="none" stroke-linecap="round"/><ellipse cx="28" cy="38" rx="12" ry="4" fill="${l}" opacity=".7"/>
+  <ellipse cx="24" cy="14" rx="7.5" ry="8.5" fill="#fff" stroke="${d}" stroke-width="1.6"/><ellipse cx="39" cy="15" rx="6.5" ry="7.5" fill="#fff" stroke="${d}" stroke-width="1.6"/>
+  <circle cx="26" cy="15" r="4.2" fill="#1b1b1f"/><circle cx="40.5" cy="16" r="3.7" fill="#1b1b1f"/><circle cx="27.5" cy="13" r="1.5" fill="#fff"/><circle cx="41.8" cy="14" r="1.3" fill="#fff"/>
+  <circle cx="49" cy="22" r="1.3" fill="${d}"/><circle cx="17" cy="27" r="3" fill="#ff8fab" opacity=".55"/></svg>`; };
 
 const Snake: Game & Record<string, any> = {
   title: 'Пікс-змійки', theme: 'th-snake',
@@ -55,12 +59,12 @@ const Snake: Game & Record<string, any> = {
   layout() {
     const W = this.W, H = this.H, cs = this.cs = Math.floor(Math.min(this.el.clientWidth - 20, (this.el.clientHeight - 200)) / (W + 2));
     const px = this.el.querySelector('.px'); px.style.cssText = `width:${(W + 2) * cs}px;height:${(H + 2) * cs}px;--cs:${cs}px`;
-    this.el.querySelector('.belt').innerHTML = `<rect x="${cs / 2}" y="${cs / 2}" width="${(W + 1) * cs}" height="${(H + 1) * cs}" rx="${cs * .6}" fill="none" stroke="#5a4c9c" stroke-width="${cs * .86}"/><rect x="${cs / 2}" y="${cs / 2}" width="${(W + 1) * cs}" height="${(H + 1) * cs}" rx="${cs * .6}" fill="none" stroke="#fff" stroke-opacity=".18" stroke-width="2" stroke-dasharray="${cs * .3} ${cs * .4}" class="beltdash"/>`;
+    this.el.querySelector('.belt').innerHTML = `<rect x="${cs / 2}" y="${cs / 2}" width="${(W + 1) * cs}" height="${(H + 1) * cs}" rx="${cs * .6}" fill="none" stroke="#5a4c9c" stroke-width="${cs * .86}"/><rect x="${cs / 2}" y="${cs / 2}" width="${(W + 1) * cs}" height="${(H + 1) * cs}" rx="${cs * .6}" fill="none" stroke="#fff" stroke-opacity=".18" stroke-width="2" stroke-dasharray="${cs * .3} ${cs * .4}" class="beltdash"/><g transform="translate(${cs / 2} ${(H + 1.5) * cs})"><circle r="${cs * .55}" fill="#ffd23f" stroke="#1b1b1f" stroke-width="2"/><path d="M${-cs * .22} ${cs * .1}a${cs * .25} ${cs * .25} 0 1 1 ${cs * .1} ${cs * .18}" fill="none" stroke="#1b1b1f" stroke-width="2.4" stroke-linecap="round"/><path d="M${-cs * .3} ${cs * .02}l${cs * .08} ${cs * .14} ${cs * .12} -${cs * .08}" fill="none" stroke="#1b1b1f" stroke-width="2.4" stroke-linecap="round"/></g>`;
     this.el.querySelector('.bricks').innerHTML = this.g.map((c: string, i: number) => c ? `<i data-i="${i}" style="left:${(i % W + 1) * cs}px;top:${(Math.floor(i / W) + 1) * cs}px;--c:${PAL[c]}"></i>` : '').join('');
     this.P = this.path();
   },
   hud() { setStats(`${pill('Рів. ' + this.lvl)}${pill(this.g.filter(Boolean).length + ' цеглин')}`); },
-  coil(s: Sn, attrs: string, small = false) { return `<button class="coil${small ? ' sm' : ''}" ${attrs}>${coilSVG(PAL[s.c])}<b>${s.n}</b></button>`; },
+  coil(s: Sn, attrs: string, small = false) { return `<button class="coil${small ? ' sm' : ''}" ${attrs}>${eggSVG(PAL[s.c])}<b>${s.n}</b></button>`; },
   renderQ() {
     this.el.querySelector('.nest').innerHTML = Array.from({ length: this.cap }, (_, i) => `<span class="nslot">${this.nest[i] ? this.coil(this.nest[i], `data-n="${i}"`) : ''}</span>`).join('');
     this.el.querySelector('.lanes').innerHTML = this.lanes.map((ln: Sn[], li: number) => ln.length ? `<div class="lane">${ln.slice(0, 3).map((s, k) => this.coil(s, k ? 'disabled' : `data-l="${li}"`, k > 0)).join('')}</div>` : '').join('');
@@ -88,13 +92,18 @@ const Snake: Game & Record<string, any> = {
     if (this.over) return;
     if (this.runs.length + this.queue.length >= MAXRUN) { haptic('err'); return flash(this.el.querySelector('.px'), 'shake'); }
     const sn = take(); if (!sn) return;
+    this.crack(PAL[sn.c]);
     haptic(); this.queue.push(sn); this.renderQ();
+  },
+  crack(col: string) {
+    const nest = this.el.querySelector('.px') as HTMLElement, e = document.createElement('div'); e.className = 'shell';
+    e.innerHTML = `<i style="--c:${col}"></i><i style="--c:${col}"></i>`; nest.appendChild(e); setTimeout(() => e.remove(), 600);
   },
   spawn(sn: Sn) {
     const track = this.el.querySelector('.track'), segs: HTMLElement[] = [];
     const head = document.createElement('i'); head.className = 'head'; head.style.setProperty('--c', PAL[sn.c]); head.style.setProperty('--d', shade(PAL[sn.c], -.3));
-    head.innerHTML = `<span class="eyes"><u></u><u></u></span><b>${sn.n}</b>`; track.appendChild(head);
-    const body = Math.min(10, sn.n);
+    head.innerHTML = `${headSVG(PAL[sn.c])}<b>${sn.n}</b>`; track.appendChild(head);
+    const body = Math.min(12, sn.n + 3);
     for (let k = 0; k < body; k++) { const e = document.createElement('i'); e.className = 'seg'; e.style.setProperty('--c', PAL[sn.c]); e.style.setProperty('--d', shade(PAL[sn.c], -.3)); e.style.setProperty('--k', String(1 - k / (body + 4))); track.insertBefore(e, track.firstChild); segs.push(e); }
     this.runs.push({ sn, s: 0, segs, head, next: 0 });
   },
@@ -109,8 +118,8 @@ const Snake: Game & Record<string, any> = {
       r.s += SPEED * dt;
       while (r.next <= Math.min(r.s, end)) { this.bite(r, this.P[r.next]); r.next++; }
       const [x, y, dx, dy] = this.at(r.s);
-      r.head.style.transform = `translate(${x}px,${y}px)`; r.head.style.setProperty('--ex', dx * 2 + 'px'); r.head.style.setProperty('--ey', dy * 2 + 'px');
-      r.segs.forEach((e, k) => { const ss = r.s - (k + 1) * GAP; if (ss < 0) { e.style.opacity = '0'; return; } const [sx, sy] = this.at(ss); e.style.opacity = '1'; e.style.transform = `translate(${sx}px,${sy}px)`; });
+      r.head.style.transform = `translate(${x}px,${y}px)`; r.head.style.setProperty('--rot', Math.atan2(dy, dx) + 'rad');
+      r.segs.forEach((e, k) => { const ss = r.s - (k + 1) * GAP; if (ss < 0) { e.style.opacity = '0'; return; } const [sx, sy, ddx, ddy] = this.at(ss), w = Math.sin(this.last / 110 - k * .9) * this.cs * .14; e.style.opacity = '1'; e.style.transform = `translate(${sx - ddy * w}px,${sy + ddx * w}px)`; });
       if (r.s - (r.segs.length + 1) * GAP >= end) this.finish(r);
     }
   },
@@ -118,12 +127,19 @@ const Snake: Game & Record<string, any> = {
     const t = this.facing(p.side, p.i);
     if (t < 0 || r.sn.n <= 0 || this.g[t] !== r.sn.c) return;
     this.g[t] = null; r.sn.n--; Score.good(3); r.head.querySelector('b')!.textContent = String(r.sn.n);
-    const seg = r.segs.pop(); seg?.remove();
+    if (r.segs.length > 3) r.segs.pop()?.remove();
     flash(r.head, 'chomp', 180); haptic();
     const b = this.el.querySelector(`.bricks [data-i="${t}"]`) as HTMLElement;
     if (b) { const dx = p.x * this.cs - parseFloat(b.style.left), dy = p.y * this.cs - parseFloat(b.style.top); b.animate([{ transform: 'none' }, { transform: `translate(${dx}px,${dy}px) scale(.25)`, opacity: .2 }], { duration: 200, easing: 'ease-in' }).onfinish = () => b.remove(); }
     this.hud();
+    if (r.sn.n <= 0) this.popRun(r);
     if (!this.g.some(Boolean) && !this.over) { this.over = true; done('sn_lvl', this.lvl, () => this.load()); }
+  },
+  /** a snake that has eaten everything pops right away and frees the belt */
+  popRun(r: Run) {
+    const i = this.runs.indexOf(r); if (i < 0) return; this.runs.splice(i, 1);
+    [r.head, ...r.segs].forEach((e, k) => { e.style.transition = 'none'; e.classList.add('popped'); e.style.animationDelay = k * 25 + 'ms'; setTimeout(() => e.remove(), 380 + k * 25); });
+    haptic('ok');
   },
   finish(r: Run) {
     this.runs.splice(this.runs.indexOf(r), 1); r.head.remove(); r.segs.forEach(e => e.remove());

@@ -1,30 +1,5 @@
-#game.th-bus{background:#b9b3a7 linear-gradient(rgba(255,255,255,.12),rgba(0,0,0,.08))}
-#game.th-bus::before{content:"";position:absolute;inset:0;z-index:-1;background-image:linear-gradient(rgba(0,0,0,.07) 2px,transparent 2px),linear-gradient(90deg,rgba(0,0,0,.07) 2px,transparent 2px);background-size:36px 36px}
-.station{display:flex;flex-direction:column;align-items:stretch;gap:0;max-width:100%}
-.road{position:relative;border-radius:16px 16px 0 0;background:#3d4148;border:3px solid #1b1b1f;border-bottom:0;overflow:hidden;padding:4px 8px 0}
-.nextq{display:flex;gap:6px;align-items:center;height:22px;color:#e9e2d3;font-size:12px;font-weight:600}
-.nextq .lbl{opacity:.8}
-.nextq .mini{display:block;height:18px}
-.nextq .mini svg{height:18px;width:auto;display:block}
-.stop{position:relative;height:72px;display:flex;justify-content:center;align-items:flex-end;padding-bottom:4px}
-.stop::before{content:"";position:absolute;left:-8px;right:-8px;top:38px;border-top:3px dashed #ffd23f;opacity:.7}
-.busEl{position:relative;transform-origin:bottom}
-.busEl svg{height:64px;width:auto;display:block}
-.busEl.enter{animation:busIn .8s cubic-bezier(.2,.8,.3,1)}
-@keyframes busIn{from{transform:translateX(-120vw)}85%{transform:translateX(6px)}}
-.plat{display:flex;justify-content:center;gap:6px;padding:10px 8px;background:repeating-linear-gradient(90deg,#e9e2d3 0 30px,#ddd5c3 30px 32px);border:3px solid #1b1b1f;border-top:6px solid #ffd23f}
-.plat .slot{width:min(46px,calc((100vw - 70px)/5));aspect-ratio:1;border-radius:12px;border:2px dashed rgba(0,0,0,.3);display:flex;background:rgba(255,255,255,.35)}
-.plat .slot svg{width:100%;height:100%}
-.walker svg{animation:bob .3s ease-in-out infinite alternate}
-.plat.shake{animation:shake .3s}
-.yard{display:grid;gap:4px;justify-content:center;padding:12px 8px;background:#cfc6b4;border:3px solid #1b1b1f;border-top:0;border-radius:0 0 16px 16px;box-shadow:0 12px 24px rgba(0,0,0,.25)}
-.yard>*{width:var(--cs);height:var(--cs);border-radius:10px}
-.yard .e{background:rgba(255,255,255,.25)}
-.yard .w{background:radial-gradient(circle at 50% 40%,#6aab57 0 34%,#4d8a3f 35% 48%,transparent 49%),linear-gradient(#9a6b4f,#7a5038);border:2px solid #5a3a22}
-.yard button{border:0;padding:0;background:rgba(255,255,255,.55);cursor:pointer;box-shadow:inset 0 -3px 0 rgba(0,0,0,.12)}
-.yard button svg{width:100%;height:100%;display:block}
-.yard button.lock{background:rgba(0,0,0,.08)}
-.yard button.lock svg{filter:saturate(.35) brightness(.85);opacity:.75}
-.yard button:not(.lock):active{transform:scale(.94)}
-.walker{position:fixed;z-index:60;pointer-events:none}
-@keyframes bob{to{transform:translateY(-3px)}}
+#game.th-bus{background:linear-gradient(#9fd6ff,#bfe3ff)}
+#game.th-bus #stage{padding:0}
+#game.th-bus #stage canvas.shake{animation:shake .3s}
+.nextq{position:absolute;left:10px;top:8px;z-index:3;display:flex;gap:6px;align-items:center;padding:4px 8px;border-radius:12px;background:rgba(255,255,255,.85);border:2px solid #1b1b1f;font-size:12px;font-weight:600}
+.nextq i{display:block;height:18px}.nextq i svg{height:18px;width:auto;display:block}

@@ -3,8 +3,8 @@
 .fc svg{display:block;margin:auto;flex:none}
 .fc .blink{transform-box:fill-box;transform-origin:center;animation:blink 5s infinite}
 @keyframes blink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
-.fc .tail{transform-box:fill-box;transform-origin:50% 0;animation:tail 2.4s ease-in-out infinite alternate}
-@keyframes tail{from{transform:rotate(-14deg)}to{transform:rotate(16deg)}}
+.fc .tail{animation:tail 2.4s ease-in-out infinite alternate}
+@keyframes tail{from{transform:rotate(-10deg)}to{transform:rotate(12deg)}}
 .fc .sway{transform-box:fill-box;transform-origin:50% 100%;animation:sway 3.5s ease-in-out infinite alternate}
 @keyframes sway{from{transform:rotate(-3deg)}to{transform:rotate(3deg)}}
 .fc .cwrap{transform-box:fill-box;transform-origin:50% 100%}

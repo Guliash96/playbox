@@ -66,16 +66,20 @@ const Parking: Game & Record<string, any> = {
       const a = mesh(new THREE.BoxGeometry(n, .004, .035), paint, false); a.position.set(0, .002, k - n / 2); w.add(a);
       const b = mesh(new THREE.BoxGeometry(.035, .004, n), paint, false); b.position.set(k - n / 2, .002, 0); w.add(b);
     }
-    const curb = mat(0xffc533, { roughness: .6 });
-    for (const [x, z, sx, sz] of [[0, -(n / 2 + .35), n + 1, .2], [0, n / 2 + .35, n + 1, .2], [-(n / 2 + .35), 0, .2, n + .5], [n / 2 + .35, 0, .2, n + .5]]) {
-      const c = mesh(new THREE.BoxGeometry(sx, .16, sz), curb); c.position.set(x, .03, z); w.add(c);
-    }
-    for (let k = 0; k < 10; k++) { // bushes around the lot
-      const a = (k / 10) * Math.PI * 2, r = n / 2 + 1.4 + Math.random() * .6;
-      const b = mesh(new THREE.IcosahedronGeometry(.32 + Math.random() * .18, 2), mat(0x4f9a4a, { roughness: .9 })); b.position.set(Math.cos(a) * r, .2, Math.sin(a) * r); w.add(b);
+    const R = this.ring = n / 2 + .95, road = mat(0x3a3f47, { roughness: .95 });
+    for (const [x, z, sx, sz] of [[0, -R, 2 * R + 1, 1], [0, R, 2 * R + 1, 1], [-R, 0, 1, 2 * R + 1], [R, 0, 1, 2 * R + 1], [R + 8, -R, 16, 1]]) { const r = mesh(new THREE.BoxGeometry(sx, .02, sz), road, false); r.position.set(x, -.04, z); w.add(r); }
+    const dash = mat(0xffffff, { roughness: .8 });
+    for (let k = -R; k < R; k += .6) for (const [x, z, rot] of [[k, -R, 0], [k, R, 0], [-R, k, 1], [R, k, 1]] as [number, number, number][]) { const d = mesh(new THREE.BoxGeometry(.3, .01, .05), dash, false); d.position.set(x, -.02, z); d.rotation.y = rot * Math.PI / 2; w.add(d); }
+    const edge = mat(0xffd23f); for (const [x, z, sx, sz] of [[0, -n / 2 - .2, n + .4, .06], [0, n / 2 + .2, n + .4, .06], [-n / 2 - .2, 0, .06, n + .4], [n / 2 + .2, 0, .06, n + .4]]) { const e = mesh(new THREE.BoxGeometry(sx, .03, sz), edge, false); e.position.set(x, .005, z); w.add(e); }
+    for (let k = 0; k < 14; k++) {
+      const a = (k / 14) * Math.PI * 2 + .2, r = R + 1.6 + Math.random() * 1.2, tr = new THREE.Group();
+      if (Math.abs(Math.cos(a) * r - (R + 4)) < 3 && Math.sin(a) * r < -R + 1.5) continue;     // keep the exit road clear
+      const tk = mesh(new THREE.CylinderGeometry(.08, .12, .5, 6), mat(0x6b4429)); tk.position.y = .25; tr.add(tk);
+      for (let j = 0; j < 4; j++) { const b = mesh(new THREE.IcosahedronGeometry(.32 - j * .03, 1), mat([0x4f9a4a, 0x5fae55, 0x3f8a3f][j % 3], { roughness: .85 })); b.position.set(Math.cos(j * 2.1) * .18 * (j < 3 ? 1 : 0), .6 + (j === 3 ? .28 : 0), Math.sin(j * 2.1) * .18 * (j < 3 ? 1 : 0)); tr.add(b); }
+      tr.position.set(Math.cos(a) * r, 0, Math.sin(a) * r); tr.scale.setScalar(.9 + Math.random() * .5); w.add(tr);
     }
     for (const c of this.cars) {
-      const o = car3d(c.len, c.col), cells = cellsOf(c);
+      const o = car3d(c.len, c.col, true), cells = cellsOf(c);
       const cr = cells.reduce((s, x) => s + x[0], 0) / c.len, cc = cells.reduce((s, x) => s + x[1], 0) / c.len;
       o.position.set(cc - (n - 1) / 2, 0, cr - (n - 1) / 2);
       o.rotation.y = [Math.PI / 2, 0, -Math.PI / 2, Math.PI][c.d];
@@ -87,8 +91,8 @@ const Parking: Game & Record<string, any> = {
   },
   frame() {
     const st: Stage = this.st, cam = st.camera, n = this.n || 6, half = Math.tan(cam.fov * Math.PI / 360);
-    const need = (n + 1.6) / 2, d = Math.max(need / (half * cam.aspect), need / half * .95) * 1.05, el = 56 * Math.PI / 180;
-    cam.position.set(0, Math.sin(el) * d, Math.cos(el) * d + .3); cam.lookAt(0, 0, .35);
+    const need = (n + 3.6) / 2, d = Math.max(need / (half * cam.aspect), need / half * .95), el = 70 * Math.PI / 180;
+    cam.position.set(0, Math.sin(el) * d, Math.cos(el) * d + .2); cam.lookAt(0, 0, .2);
   },
   hud() { setStats(`${pill('Рів. ' + this.lvl)}${hearts(this.hp)}`); },
   occAt(r: number, c: number): Car | undefined { return this.cars.find((k: Car) => !k.gone && cellsOf(k).some(([y, x]) => y === r && x === c)); },
@@ -100,8 +104,7 @@ const Parking: Game & Record<string, any> = {
     c.busy = true;
     if (!blocker) {
       c.gone = true; haptic(); Score.good(10);
-      const far = dist + c.len + this.n;
-      st.tween(300 + far * 55, k => { o.position.copy(home).addScaledVector(dir, far * ease.in(k)); o.rotation.z = 0; }).then(() => this.world.remove(o));
+      this.drive(o, this.exitPath(o.position.clone(), c.d));
       if (this.cars.every((k: Car) => k.gone)) done('pk_lvl', this.lvl, () => this.load());
       return;
     }
@@ -113,6 +116,23 @@ const Parking: Game & Record<string, any> = {
     await st.tween(t + 120, k => o.position.copy(home).addScaledVector(dir, go * (1 - ease.out(k))));
     c.busy = false;
     if (this.hp <= 0) outOfHearts(() => { this.hp = 1; this.hud(); }, () => this.load());
+  },
+  /** lot edge → ring road → clockwise to the top-right exit → off screen */
+  exitPath(p: THREE.Vector3, d: number) {
+    const R = this.ring, pts: THREE.Vector3[] = [p.clone()], v = (x: number, z: number) => new THREE.Vector3(x, 0, z);
+    const side = ['top', 'right', 'bottom', 'left'][d];
+    const onRing = side === 'top' ? v(p.x, -R) : side === 'bottom' ? v(p.x, R) : side === 'left' ? v(-R, p.z) : v(R, p.z);
+    pts.push(onRing);
+    const route: Record<string, THREE.Vector3[]> = { top: [], right: [v(R, R), v(-R, R), v(-R, -R)], bottom: [v(-R, R), v(-R, -R)], left: [v(-R, -R)] };
+    pts.push(...route[side], v(R + 16, -R));
+    return pts;
+  },
+  drive(o: THREE.Object3D, pts: THREE.Vector3[]) {
+    const segs = pts.slice(1).map((q, i) => ({ a: pts[i], b: q, l: pts[i].distanceTo(q) })), total = segs.reduce((s, x) => s + x.l, 0);
+    this.st.tween(500 + total * 90, k => {
+      let s = Math.min(total, k * total * (k < .2 ? k / .2 : 1));
+      for (const g of segs) { if (s <= g.l || g === segs[segs.length - 1]) { const f = g.l ? Math.min(1, s / g.l) : 1; o.position.lerpVectors(g.a, g.b, f); const dx = g.b.x - g.a.x, dz = g.b.z - g.a.z; if (dx || dz) { const want = Math.atan2(-dz, dx); let dr = want - o.rotation.y; while (dr > Math.PI) dr -= 2 * Math.PI; while (dr < -Math.PI) dr += 2 * Math.PI; o.rotation.y += dr * .35; } break; } s -= g.l; }
+    }).then(() => this.world.remove(o));
   },
   hint() {
     const c = this.cars.find((k: Car) => !k.gone && !this.ahead(k).blocker); if (!c) return;

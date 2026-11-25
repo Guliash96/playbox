@@ -6,7 +6,7 @@ import { haptic } from '../core/platform';
 import { setStats, setTools, pill } from '../core/ui';
 import { Ads } from '../core/ads';
 import { done } from '../core/flow';
-import { catHead } from '../art/cat';
+import { catHead, catTail } from '../art/cat';
 import { Score } from '../core/score';
 import type { Game } from './registry';
 
@@ -19,21 +19,21 @@ interface It { x: number; y: number; w: number; h: number; t: string }
 
 function book(x: number, y: number, w: number, h: number, lean = 0) {
   const c = pick(BOOK), d = shade(c, -0.3), band = Math.random() < .5 ? '#d9b54a' : shade(c, 0.35);
-  const g = `<rect x="${x}" y="${f(y - h)}" width="${w}" height="${f(h)}" rx="1.5" fill="${c}"/><rect x="${x}" y="${f(y - h + 4)}" width="${w}" height="2" fill="${band}"/><rect x="${x}" y="${f(y - 8)}" width="${w}" height="2" fill="${band}"/><rect x="${x + 1}" y="${f(y - h + 1)}" width="1.4" height="${f(h - 2)}" fill="#fff" opacity=".22"/><rect x="${x + w - 1.5}" y="${f(y - h)}" width="1.5" height="${f(h)}" fill="${d}"/>`;
+  const g = `<rect x="${x}" y="${f(y - h)}" width="${w}" height="${f(h)}" rx="1.5" fill="${c}"/><rect x="${x}" y="${f(y - h + 4)}" width="${w}" height="2" fill="${band}"/><rect x="${x}" y="${f(y - 8)}" width="${w}" height="2" fill="${band}"/><rect x="${x + 1}" y="${f(y - h + 1)}" width="1.4" height="${f(h - 2)}" fill="#fff" opacity=".22"/><rect x="${x + w - 1.5}" y="${f(y - h)}" width="1.5" height="${f(h)}" fill="${d}"/><rect x="${x}" y="${f(y - h)}" width="${w}" height="${f(h)}" rx="1.5" fill="url(#cyl)"/>`;
   return lean ? `<g transform="rotate(${lean} ${lean < 0 ? x : x + w} ${y})">${g}</g>` : g;
 }
 function drawItem(it: It) {
   const { x, y, w, h, t } = it, top = y - h;
   if (t === 'books') { let s = '', bx = x; while (bx < x + w - 3) { const bw = Math.min(5 + R(6), x + w - bx); s += book(bx, y, bw, h * (.72 + Math.random() * .28)); bx += bw + .5; } if (Math.random() < .4) s += book(x + w + 1, y, 6, h * .9, 14); return s; }
   if (t === 'stack') { let s = ''; for (let k = 0, yy = y; k < 3; k++) { const bh = 6 + R(3), c = pick(BOOK); s += `<rect x="${x + R(4)}" y="${yy - bh}" width="${w - 4}" height="${bh}" rx="1.5" fill="${c}"/><rect x="${x + w - 6}" y="${yy - bh + 1}" width="3" height="${bh - 2}" fill="#f3ead8"/>`; yy -= bh; } return s; }
-  if (t === 'box') return `<rect x="${x}" y="${f(top)}" width="${w}" height="${f(h)}" fill="#c99a63" stroke="#8a6238" stroke-width="1"/><path d="M${x} ${f(top)}l${f(w * .5)} ${f(Math.min(8, h * .3))}l${f(w * .5)} ${f(-Math.min(8, h * .3))}" fill="#d8ae78" stroke="#8a6238" stroke-width=".8"/><rect x="${f(x + w * .42)}" y="${f(top)}" width="${f(w * .16)}" height="${f(h)}" fill="#e7c48f" opacity=".7"/><rect x="${f(x + 4)}" y="${f(y - h * .45)}" width="${f(w * .3)}" height="${f(h * .2)}" fill="#f6efe2"/>`;
-  if (t === 'jar') { const cc = pick(['#ff7a9c', '#ffd23f', '#7fd1ff', '#9be37a']); return `<rect x="${x}" y="${f(top + 5)}" width="${w}" height="${f(h - 5)}" rx="6" fill="#d7eef5" opacity=".55" stroke="#9cc3cf"/>${Array.from({ length: 6 }, () => `<circle cx="${f(x + 4 + Math.random() * (w - 8))}" cy="${f(y - 4 - Math.random() * (h * .45))}" r="3" fill="${cc}"/>`).join('')}<rect x="${x + 2}" y="${f(top)}" width="${w - 4}" height="6" rx="2" fill="#7a5038"/><rect x="${x + 3}" y="${f(top + 8)}" width="2.5" height="${f(h - 14)}" fill="#fff" opacity=".6"/>`; }
+  if (t === 'box') return `<path d="M${x + w} ${f(top)}l4 -3v${f(h)}l-4 3z" fill="#a87a48"/><path d="M${x} ${f(top)}l4 -3h${w}l-4 3z" fill="#dcb47e"/><rect x="${x}" y="${f(top)}" width="${w}" height="${f(h)}" fill="#c99a63" stroke="#8a6238" stroke-width="1"/><path d="M${x} ${f(top)}l${f(w * .5)} ${f(Math.min(8, h * .3))}l${f(w * .5)} ${f(-Math.min(8, h * .3))}" fill="#d8ae78" stroke="#8a6238" stroke-width=".8"/><rect x="${f(x + w * .42)}" y="${f(top)}" width="${f(w * .16)}" height="${f(h)}" fill="#e7c48f" opacity=".7"/><rect x="${f(x + 4)}" y="${f(y - h * .45)}" width="${f(w * .3)}" height="${f(h * .2)}" fill="#f6efe2"/>`;
+  if (t === 'jar') { const cc = pick(['#ff7a9c', '#ffd23f', '#7fd1ff', '#9be37a']); return `<rect x="${x}" y="${f(top + 5)}" width="${w}" height="${f(h - 5)}" rx="6" fill="#d7eef5" opacity=".55" stroke="#9cc3cf"/>${Array.from({ length: 6 }, () => `<circle cx="${f(x + 4 + Math.random() * (w - 8))}" cy="${f(y - 4 - Math.random() * (h * .45))}" r="3" fill="${cc}"/>`).join('')}<rect x="${x + 2}" y="${f(top)}" width="${w - 4}" height="6" rx="2" fill="#7a5038"/><rect x="${x}" y="${f(top + 5)}" width="${w}" height="${f(h - 5)}" rx="6" fill="url(#cyl)"/><ellipse cx="${f(x + w / 2)}" cy="${f(top + 1.5)}" rx="${f(w / 2 - 2)}" ry="2" fill="#9a6a48"/><rect x="${x + 3}" y="${f(top + 8)}" width="2.5" height="${f(h - 14)}" fill="#fff" opacity=".6"/>`; }
   if (t === 'plant') {
     const cx = x + w / 2, py = y - h * .42, leaves = Array.from({ length: 6 }, (_, k) => { const a = -70 + k * 28 + R(10); return `<ellipse cx="${f(cx)}" cy="${f(py - h * .3)}" rx="${f(w * .14)}" ry="${f(h * .32)}" fill="${k % 2 ? '#4d8a3f' : '#6aab57'}" transform="rotate(${a} ${f(cx)} ${f(py)})"/>`; }).join('');
-    return `<g class="sway" style="animation-delay:-${R(30) / 10}s">${leaves}</g><path d="M${f(x + w * .15)} ${f(py)}h${f(w * .7)}l${f(-w * .1)} ${f(y - py)}h${f(-w * .5)}z" fill="#c2553b"/><rect x="${f(x + w * .1)}" y="${f(py - 3)}" width="${f(w * .8)}" height="5" rx="2" fill="#a8432d"/>`;
+    return `<g class="sway" style="animation-delay:-${R(30) / 10}s">${leaves}</g><path d="M${f(x + w * .15)} ${f(py)}h${f(w * .7)}l${f(-w * .1)} ${f(y - py)}h${f(-w * .5)}z" fill="#c2553b"/><path d="M${f(x + w * .15)} ${f(py)}h${f(w * .7)}l${f(-w * .1)} ${f(y - py)}h${f(-w * .5)}z" fill="url(#cyl)"/><rect x="${f(x + w * .1)}" y="${f(py - 3)}" width="${f(w * .8)}" height="5" rx="2" fill="#a8432d"/>`;
   }
-  if (t === 'vase') { const c = pick(['#2f6f8f', '#c2553b', '#e9e2d3', '#3f6b4a']); return `<path d="M${f(x + w * .3)} ${f(top)}h${f(w * .4)}c0 ${f(h * .2)} ${f(w * .3)} ${f(h * .3)} ${f(w * .3)} ${f(h * .6)}s${f(-w * .2)} ${f(h * .4)} ${f(-w * .5)} ${f(h * .4)}s${f(-w * .5)} 0 ${f(-w * .5)} ${f(-h * .4)}s${f(w * .3)} ${f(-h * .4)} ${f(w * .3)} ${f(-h * .6)}z" fill="${c}"/><path d="M${f(x + w * .08)} ${f(y - h * .4)}h${f(w * .84)}" stroke="#fff" stroke-opacity=".5" stroke-width="2"/>`; }
-  if (t === 'yarn') { const c = pick(FUR), r = Math.min(w, h) / 2; return `<circle cx="${f(x + w / 2)}" cy="${f(y - r)}" r="${f(r)}" fill="${c}"/><path d="M${f(x + w / 2 - r * .8)} ${f(y - r * 1.4)}q${f(r)} ${f(r * .6)} ${f(r * 1.6)} ${f(r * .2)}M${f(x + w / 2 - r * .9)} ${f(y - r * .8)}q${f(r)} ${f(r * .5)} ${f(r * 1.7)} ${f(-r * .1)}" stroke="${shade(c, -.3)}" fill="none" stroke-width="1.2"/>`; }
+  if (t === 'vase') { const c = pick(['#2f6f8f', '#c2553b', '#e9e2d3', '#3f6b4a']); return `<path d="M${f(x + w * .3)} ${f(top)}h${f(w * .4)}c0 ${f(h * .2)} ${f(w * .3)} ${f(h * .3)} ${f(w * .3)} ${f(h * .6)}s${f(-w * .2)} ${f(h * .4)} ${f(-w * .5)} ${f(h * .4)}s${f(-w * .5)} 0 ${f(-w * .5)} ${f(-h * .4)}s${f(w * .3)} ${f(-h * .4)} ${f(w * .3)} ${f(-h * .6)}z" fill="${c}"/><path d="M${f(x + w * .3)} ${f(top)}h${f(w * .4)}c0 ${f(h * .2)} ${f(w * .3)} ${f(h * .3)} ${f(w * .3)} ${f(h * .6)}s${f(-w * .2)} ${f(h * .4)} ${f(-w * .5)} ${f(h * .4)}s${f(-w * .5)} 0 ${f(-w * .5)} ${f(-h * .4)}s${f(w * .3)} ${f(-h * .4)} ${f(w * .3)} ${f(-h * .6)}z" fill="url(#cyl)"/><path d="M${f(x + w * .08)} ${f(y - h * .4)}h${f(w * .84)}" stroke="#fff" stroke-opacity=".5" stroke-width="2"/>`; }
+  if (t === 'yarn') { const c = pick(FUR), r = Math.min(w, h) / 2; return `<circle cx="${f(x + w / 2)}" cy="${f(y - r)}" r="${f(r)}" fill="${c}"/><circle cx="${f(x + w / 2)}" cy="${f(y - r)}" r="${f(r)}" fill="url(#sph)"/><path d="M${f(x + w / 2 - r * .8)} ${f(y - r * 1.4)}q${f(r)} ${f(r * .6)} ${f(r * 1.6)} ${f(r * .2)}M${f(x + w / 2 - r * .9)} ${f(y - r * .8)}q${f(r)} ${f(r * .5)} ${f(r * 1.7)} ${f(-r * .1)}" stroke="${shade(c, -.3)}" fill="none" stroke-width="1.2"/>`; }
   // picture frame
   return `<rect x="${x}" y="${f(top)}" width="${w}" height="${f(h)}" fill="#5a3a22"/><rect x="${x + 3}" y="${f(top + 3)}" width="${w - 6}" height="${f(h - 6)}" fill="#9fd4f0"/><path d="M${x + 3} ${f(y - 3)}l${f((w - 6) * .4)} ${f(-(h - 6) * .5)}l${f((w - 6) * .3)} ${f((h - 6) * .3)}l${f((w - 6) * .3)} ${f(-(h - 6) * .2)}v${f((h - 6) * .4)}z" fill="#5c9a4b"/>`;
 }
@@ -53,13 +53,12 @@ const FindCat: Game & Record<string, any> = {
     for (const y of shelves) { let x = 16; for (; ;) { const t = pick(types), w = t === 'books' ? 22 + R(30) : 16 + R(22); if (x + w > 344) break; items.push({ x, y, w, h: t === 'stack' ? 24 : 22 + R(32), t }); x += w + 2 + R(7); } }
     const catIt = new Set(shuffle(items.filter(it => it.w >= cr * 1.8 && it.t !== 'yarn')).slice(0, this.k));
     this.cats = [];
-    let s = `<defs><pattern id="wp" width="24" height="24" patternUnits="userSpaceOnUse"><rect width="24" height="24" fill="#5e4130"/><path d="M0 0v24M12 0v24" stroke="#4e3526" stroke-width="1"/></pattern></defs>
+    let s = `<defs><linearGradient id="cyl" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity=".12"/><stop offset=".25" stop-color="#fff" stop-opacity=".38"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".32"/></linearGradient><radialGradient id="sph" cx=".35" cy=".3" r=".75"><stop offset="0" stop-color="#fff" stop-opacity=".45"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".35"/></radialGradient><pattern id="wp" width="24" height="24" patternUnits="userSpaceOnUse"><rect width="24" height="24" fill="#5e4130"/><path d="M0 0v24M12 0v24" stroke="#4e3526" stroke-width="1"/></pattern></defs>
       <rect width="${VW}" height="${VH}" fill="#e9dcc0"/><rect x="6" y="10" width="${VW - 12}" height="${VH - 10}" fill="url(#wp)"/>
       <rect x="0" y="0" width="${VW}" height="16" fill="#7a5038"/><rect x="0" y="14" width="${VW}" height="4" fill="#5a3a22"/>
       <rect x="0" y="0" width="12" height="${VH}" fill="#7a5038"/><rect x="${VW - 12}" y="0" width="12" height="${VH}" fill="#7a5038"/>
       <rect x="12" y="18" width="${VW - 24}" height="40" fill="#000" opacity=".15"/>`;
     s += shelves.map(y => `<rect x="10" y="${y}" width="${VW - 20}" height="10" fill="#8b5a2b"/><rect x="10" y="${y}" width="${VW - 20}" height="3" fill="#a8743f"/><rect x="10" y="${y + 10}" width="${VW - 20}" height="8" fill="#000" opacity=".22"/>`).join('');
-    let tails = '';
     for (const it of items) {
       if (catIt.has(it)) {
         it.h = Math.min(it.h, 30);
@@ -68,11 +67,11 @@ const FindCat: Game & Record<string, any> = {
         const y = side ? it.y - cr * .95 : it.y - it.h - cr * .2, fur = pick(FUR), id = this.cats.length;
         this.cats.push({ x, y, r: cr, f: false });
         s += `<g class="cwrap" id="cat${id}">${catHead(x, y, cr, fur, Math.random() * 5)}</g>`;
-        if (Math.random() < .45) { const tx = x + (Math.random() < .5 ? -cr * .6 : cr * .6); tails += `<path class="tail" style="animation-delay:-${R(20) / 10}s" d="M${f(tx)} ${it.y + 6}c0 10 ${f(cr * .2)} 18 ${f(cr * .7)} 20" fill="none" stroke="${fur}" stroke-width="${f(cr * .32)}" stroke-linecap="round"/>`; }
+        if (!side && Math.random() < .55) { const dir = Math.random() < .5 ? 1 : -1; s += catTail(dir > 0 ? it.x + it.w - 3 : it.x + 3, it.y - it.h * .35, cr, fur, dir as 1 | -1, Math.random() * 2); }
       }
       s += drawItem(it);
     }
-    s += tails + `<rect x="0" y="${VH - 18}" width="${VW}" height="18" fill="#5a3a22"/>`;
+    s += `<rect x="0" y="${VH - 18}" width="${VW}" height="18" fill="#5a3a22"/>`;
     this.scene = s;
   },
   draw() {

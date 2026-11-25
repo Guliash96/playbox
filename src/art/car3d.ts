@@ -10,7 +10,9 @@ const dark = mat(0x2b2b31, { roughness: .8 });
 const wheelGeo = new THREE.CylinderGeometry(.16, .16, .12, 18).rotateX(Math.PI / 2);
 const hubGeo = new THREE.CylinderGeometry(.07, .07, .13, 10).rotateX(Math.PI / 2);
 
-export function car3d(len: number, color: string) {
+const arrowGeo = (() => { const s = new THREE.Shape(); s.moveTo(-.22, -.16); s.lineTo(.05, -.16); s.lineTo(.05, -.3); s.lineTo(.32, 0); s.lineTo(.05, .3); s.lineTo(.05, .16); s.lineTo(-.22, .16); s.closePath(); return new THREE.ShapeGeometry(s).rotateX(-Math.PI / 2); })();
+const arrowMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: .92 });
+export function car3d(len: number, color: string, arrow = false) {
   const g = new THREE.Group(), L = len * .92, body = mat(color, { roughness: .35, metalness: .15 });
   const lighter = mat(new THREE.Color(color).lerp(new THREE.Color('#ffffff'), .82), { roughness: .5 });
   const add = (m: THREE.Mesh, x: number, y: number, z = 0) => { m.position.set(x, y, z); g.add(m); return m; };
@@ -35,5 +37,6 @@ export function car3d(len: number, color: string) {
   }
   const wx = len >= 3 ? [L / 2 - .45, -L / 2 + .35, -L / 2 + .8] : [L * .3, -L * .3];
   for (const x of wx) for (const z of [.4, -.4]) { add(mesh(wheelGeo, tyre), x, .16, z); add(mesh(hubGeo, hub, false), x, .16, z); }
+  if (arrow) { const a = new THREE.Mesh(arrowGeo, arrowMat); a.position.set(len >= 3 ? -.47 : -L * .06, len >= 3 ? .99 : .78, 0); a.scale.setScalar(len === 1 ? .8 : 1.1); g.add(a); }
   return g;
 }
