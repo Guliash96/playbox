@@ -10,6 +10,7 @@ import { done, outOfHearts } from '../core/flow';
 import { Stage, THREE, mat, mesh, ease } from '../core/three';
 import { car3d } from '../art/car3d';
 import { Score } from '../core/score';
+import { sfx } from '../core/sfx';
 import type { Game } from './registry';
 
 const D = [[-1, 0], [0, 1], [1, 0], [0, -1]];          // up right down left (row, col)
@@ -71,12 +72,14 @@ const Parking: Game & Record<string, any> = {
     const dash = mat(0xffffff, { roughness: .8 });
     for (let k = -R; k < R; k += .6) for (const [x, z, rot] of [[k, -R, 0], [k, R, 0], [-R, k, 1], [R, k, 1]] as [number, number, number][]) { const d = mesh(new THREE.BoxGeometry(.3, .01, .05), dash, false); d.position.set(x, -.02, z); d.rotation.y = rot * Math.PI / 2; w.add(d); }
     const edge = mat(0xffd23f); for (const [x, z, sx, sz] of [[0, -n / 2 - .2, n + .4, .06], [0, n / 2 + .2, n + .4, .06], [-n / 2 - .2, 0, .06, n + .4], [n / 2 + .2, 0, .06, n + .4]]) { const e = mesh(new THREE.BoxGeometry(sx, .03, sz), edge, false); e.position.set(x, .005, z); w.add(e); }
-    for (let k = 0; k < 14; k++) {
-      const a = (k / 14) * Math.PI * 2 + .2, r = R + 1.6 + Math.random() * 1.2, tr = new THREE.Group();
-      if (Math.abs(Math.cos(a) * r - (R + 4)) < 3 && Math.sin(a) * r < -R + 1.5) continue;     // keep the exit road clear
+    for (let k = 0, placed = 0; k < 80 && placed < 16; k++) {
+      const x = (Math.random() - .5) * (2 * R + 7), z = (Math.random() - .5) * (2 * R + 7), tr = new THREE.Group();
+      if (Math.max(Math.abs(x), Math.abs(z)) < R + 1.2) continue;                 // keep off the lot and the ring road
+      if (z > -R - 1.3 && z < -R + 1.3 && x > R - 1) continue;                     // keep the exit road clear
+      placed++;
       const tk = mesh(new THREE.CylinderGeometry(.08, .12, .5, 6), mat(0x6b4429)); tk.position.y = .25; tr.add(tk);
       for (let j = 0; j < 4; j++) { const b = mesh(new THREE.IcosahedronGeometry(.32 - j * .03, 1), mat([0x4f9a4a, 0x5fae55, 0x3f8a3f][j % 3], { roughness: .85 })); b.position.set(Math.cos(j * 2.1) * .18 * (j < 3 ? 1 : 0), .6 + (j === 3 ? .28 : 0), Math.sin(j * 2.1) * .18 * (j < 3 ? 1 : 0)); tr.add(b); }
-      tr.position.set(Math.cos(a) * r, 0, Math.sin(a) * r); tr.scale.setScalar(.9 + Math.random() * .5); w.add(tr);
+      tr.position.set(x, 0, z); tr.scale.setScalar(.9 + Math.random() * .5); w.add(tr);
     }
     for (const c of this.cars) {
       const o = car3d(c.len, c.col, true), cells = cellsOf(c);
@@ -103,7 +106,7 @@ const Parking: Game & Record<string, any> = {
     const dir = new THREE.Vector3(dc, 0, dr);
     c.busy = true;
     if (!blocker) {
-      c.gone = true; haptic(); Score.good(10);
+      c.gone = true; sfx('whoosh'); Score.good(10);
       this.drive(o, this.exitPath(o.position.clone(), c.d));
       if (this.cars.every((k: Car) => k.gone)) done('pk_lvl', this.lvl, () => this.load());
       return;

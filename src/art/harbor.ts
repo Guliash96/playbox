@@ -1,44 +1,62 @@
-// Item art for the merge game. Each returns inner SVG for a 0 0 40 40 box.
-const fish = (col: string, len: number, stripes = 0, crown = false) => {
-  const L = len, x0 = 20 - L / 2;
-  return `<ellipse cx="20" cy="31" rx="${L / 2}" ry="3" fill="#000" opacity=".12"/>
-  <path d="M${x0 + L - 2} 20l${L * .32} -${L * .22}v${L * .44}z" fill="${col}" stroke="#1b1b1f" stroke-width="1.2" stroke-linejoin="round"/>
-  <ellipse cx="${x0 + L * .45}" cy="20" rx="${L * .5}" ry="${L * .3}" fill="${col}" stroke="#1b1b1f" stroke-width="1.2"/>
-  ${Array.from({ length: stripes }, (_, k) => `<path d="M${x0 + L * (.35 + k * .15)} ${20 - L * .26}q-2 ${L * .26} 0 ${L * .52}" stroke="#1b1b1f" stroke-opacity=".45" stroke-width="1.6" fill="none"/>`).join('')}
-  <ellipse cx="${x0 + L * .4}" cy="${20 - L * .12}" rx="${L * .25}" ry="${L * .08}" fill="#fff" opacity=".35"/>
-  <circle cx="${x0 + L * .18}" cy="${20 - L * .06}" r="${Math.max(1.6, L * .06)}" fill="#1b1b1f"/>
-  ${crown ? `<path d="M${x0 + L * .3} ${20 - L * .3}l2 -6 3 4 3 -5 3 5 3 -4 2 6z" fill="#ffd23f" stroke="#1b1b1f" stroke-width="1"/>` : ''}`;
+// Item art for the merge game (0 0 40 40). Shared gradients live in one hidden <svg> (ensureHarborDefs).
+const GR: Record<string, [string, string]> = {
+  shrimp: ['#ffc0c8', '#ff6f86'], f1: ['#bfe9ff', '#3fa7e6'], f2: ['#ffd98a', '#f08a1a'], f3: ['#a9cbff', '#2f63d6'], f4: ['#c9d3e6', '#4c5a78'], f5: ['#fff3a6', '#e0a414'],
+  peb: ['#e2e6ea', '#8d96a0'], sh1: ['#ffd6e2', '#ff7fa2'], sh2: ['#ffe0b8', '#ff9a4a'], sh3: ['#efe6ff', '#a98cff'], wood: ['#d9a86c', '#8a5a2b'],
+  rope: ['#ecd2a8', '#b88a4f'], net: ['#bfe6f5', '#3a8fb8'], rod: ['#c48a4a', '#6b4429'], anc: ['#d3dbe6', '#4c5a78'],
+};
+let defsDone = false;
+export function ensureHarborDefs() {
+  if (defsDone) return; defsDone = true;
+  const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('width', '0'); s.setAttribute('height', '0'); s.style.position = 'absolute';
+  s.innerHTML = `<defs>${Object.entries(GR).map(([k, [a, b]]) => `<linearGradient id="hg-${k}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>`).join('')}
+    <radialGradient id="hg-pearl" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#ffffff"/><stop offset=".6" stop-color="#eef2ff"/><stop offset="1" stop-color="#b9c3e0"/></radialGradient>
+    <radialGradient id="hg-shine" cx=".3" cy=".25" r=".6"><stop offset="0" stop-color="#fff" stop-opacity=".75"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>`;
+  document.body.appendChild(s);
+}
+const O = 'stroke="#2b2230" stroke-width="1.4" stroke-linejoin="round"';
+const fish = (g: string, len: number, stripes = 0, crown = false) => {
+  const L = len, x0 = 20 - L / 2, cy = 21;
+  return `<ellipse cx="20" cy="33" rx="${L / 2}" ry="2.6" fill="#000" opacity=".15"/>
+  <path d="M${x0 + L - 3} ${cy}l${L * .34} ${-L * .24}q${-L * .08} ${L * .24} 0 ${L * .48}z" fill="url(#hg-${g})" ${O}/>
+  <path d="M${x0 + L * .35} ${cy - L * .28}q${L * .15} ${-L * .2} ${L * .32} ${-L * .02}z" fill="url(#hg-${g})" ${O}/>
+  <ellipse cx="${x0 + L * .45}" cy="${cy}" rx="${L * .5}" ry="${L * .31}" fill="url(#hg-${g})" ${O}/>
+  <path d="M${x0 + L * .12} ${cy + L * .08}q${L * .33} ${L * .2} ${L * .7} ${L * .02}" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="1.4"/>
+  ${Array.from({ length: stripes }, (_, k) => `<path d="M${x0 + L * (.38 + k * .14)} ${cy - L * .27}q-2 ${L * .27} 0 ${L * .54}" stroke="#2b2230" stroke-opacity=".35" stroke-width="1.8" fill="none"/>`).join('')}
+  <path d="M${x0 + L * .3} ${cy - L * .02}q${L * .08} ${L * .1} 0 ${L * .2}" stroke="#2b2230" stroke-opacity=".5" fill="none" stroke-width="1.1"/>
+  <ellipse cx="${x0 + L * .42}" cy="${cy - L * .14}" rx="${L * .26}" ry="${L * .09}" fill="url(#hg-shine)"/>
+  <circle cx="${x0 + L * .17}" cy="${cy - L * .06}" r="${Math.max(2, L * .075)}" fill="#fff" ${O}/><circle cx="${x0 + L * .16}" cy="${cy - L * .06}" r="${Math.max(1.1, L * .04)}" fill="#1b1b1f"/>
+  ${crown ? `<path d="M${x0 + L * .28} ${cy - L * .3}l2 -7 3.5 4.5 3 -6 3 6 3.5 -4.5 2 7z" fill="#ffd23f" ${O}/><circle cx="${x0 + L * .28 + 8.5}" cy="${cy - L * .3 - 4}" r="1.2" fill="#ff3d7f"/>` : ''}`;
 };
 export const CHAINS: { id: string; name: string; tiers: string[]; art: string[]; unlock: number }[] = [
   {
     id: 'fish', name: 'Риба', unlock: 0, tiers: ['Креветка', 'Рибка', 'Окунь', 'Скумбрія', 'Тунець', 'Золота риба'],
     art: [
-      `<path d="M12 26c0-9 8-14 16-11c-6 0-10 4-9 9c1 4-4 6-7 2z" fill="#ff9aa2" stroke="#1b1b1f" stroke-width="1.2"/><path d="M14 22l-4-3M16 25l-4 0M27 15l5-5M26 14l1-6" stroke="#1b1b1f" stroke-width="1"/><circle cx="25" cy="17" r="1.3" fill="#1b1b1f"/>`,
-      fish('#7fd1ff', 18), fish('#ffb020', 22, 2), fish('#3d8bff', 26, 3), fish('#5b6b8c', 30, 0), fish('#ffd23f', 30, 0, true),
+      `<ellipse cx="20" cy="33" rx="10" ry="2.4" fill="#000" opacity=".15"/><path d="M11 27c-1-10 8-16 17-12c-6 0-10 4-9 9c1 5-5 7-8 3z" fill="url(#hg-shrimp)" ${O}/><path d="M14 22l-4-3M15 25.5h-4.5M27 14l5-5M26 13l1-6" stroke="#2b2230" stroke-width="1.1" stroke-linecap="round"/><path d="M17 18q2 3 1 6M20 16q2 3 1 6" stroke="#fff" stroke-opacity=".6" fill="none"/><circle cx="24.5" cy="16.5" r="1.6" fill="#1b1b1f"/>`,
+      fish('f1', 18), fish('f2', 22, 2), fish('f3', 26, 3), fish('f4', 30, 0), fish('f5', 30, 0, true),
     ],
   },
   {
     id: 'shell', name: 'Мушлі', unlock: 0, tiers: ['Камінчик', 'Мушля', 'Рапан', 'Перлина', 'Скринька перлин'],
     art: [
-      `<ellipse cx="16" cy="25" rx="7" ry="5" fill="#9aa3ad" stroke="#1b1b1f" stroke-width="1.2"/><ellipse cx="25" cy="27" rx="5" ry="3.5" fill="#c3c9d0" stroke="#1b1b1f" stroke-width="1.2"/>`,
-      `<path d="M20 30L8 16a14 14 0 0 1 24 0z" fill="#ffb3c7" stroke="#1b1b1f" stroke-width="1.2"/><path d="M20 30L12 13M20 30L17 10M20 30L23 10M20 30L28 13" stroke="#1b1b1f" stroke-opacity=".5"/><rect x="17" y="29" width="6" height="4" rx="1" fill="#ff8fab" stroke="#1b1b1f"/>`,
-      `<path d="M10 28c-2-10 6-18 16-16c6 2 6 10 0 12c-5 2-8-2-6-5c2-2 5-1 4 1" fill="#ffb877" stroke="#1b1b1f" stroke-width="1.3"/><path d="M10 28l-3 4M26 24l6 6" stroke="#1b1b1f" stroke-width="1.3"/>`,
-      `<path d="M6 24a14 8 0 0 0 28 0z" fill="#b9a5ff" stroke="#1b1b1f" stroke-width="1.2"/><path d="M6 24a14 10 0 0 1 28 0" fill="#d6c9ff" stroke="#1b1b1f" stroke-width="1.2" transform="rotate(-18 6 24)"/><circle cx="20" cy="22" r="5" fill="#fff" stroke="#1b1b1f"/><circle cx="18.5" cy="20.5" r="1.5" fill="#e6f3ff"/>`,
-      `<rect x="7" y="18" width="26" height="14" rx="2" fill="#a8743f" stroke="#1b1b1f" stroke-width="1.2"/><path d="M7 18c0-8 26-8 26 0" fill="#c48a4a" stroke="#1b1b1f" stroke-width="1.2" transform="rotate(-20 7 18)"/><circle cx="15" cy="17" r="3" fill="#fff" stroke="#1b1b1f"/><circle cx="21" cy="15" r="3" fill="#fff" stroke="#1b1b1f"/><circle cx="27" cy="17" r="3" fill="#fff" stroke="#1b1b1f"/><rect x="18" y="22" width="4" height="5" fill="#ffd23f" stroke="#1b1b1f"/>`,
+      `<ellipse cx="20" cy="32" rx="12" ry="2.4" fill="#000" opacity=".15"/><ellipse cx="16" cy="25" rx="8" ry="5.5" fill="url(#hg-peb)" ${O}/><ellipse cx="25.5" cy="27.5" rx="5.5" ry="3.8" fill="url(#hg-peb)" ${O}/><ellipse cx="14" cy="23" rx="3" ry="1.4" fill="#fff" opacity=".6"/>`,
+      `<ellipse cx="20" cy="33" rx="11" ry="2.4" fill="#000" opacity=".15"/><path d="M20 31L7 16a15 15 0 0 1 26 0z" fill="url(#hg-sh1)" ${O}/><path d="M20 31L11 12M20 31L16.5 9.5M20 31L23.5 9.5M20 31L29 12" stroke="#2b2230" stroke-opacity=".35" stroke-width="1.2"/><rect x="16.5" y="29" width="7" height="4.5" rx="1.5" fill="url(#hg-sh1)" ${O}/><path d="M12 14q8-6 16 0" stroke="#fff" stroke-opacity=".6" fill="none" stroke-width="1.4"/>`,
+      `<ellipse cx="20" cy="33" rx="12" ry="2.4" fill="#000" opacity=".15"/><path d="M9 29c-3-11 6-20 17-17c7 2 7 11 0 13c-5 2-9-2-7-5c2-2 6-1 5 1" fill="url(#hg-sh2)" ${O}/><path d="M9 29l-3 4M26 25l7 6" stroke="#2b2230" stroke-width="1.4" stroke-linecap="round"/><path d="M13 18q4-5 10-4" stroke="#fff" stroke-opacity=".7" fill="none" stroke-width="1.4"/>`,
+      `<ellipse cx="20" cy="33" rx="13" ry="2.4" fill="#000" opacity=".15"/><path d="M6 25a14 8 0 0 0 28 0z" fill="url(#hg-sh3)" ${O}/><path d="M6 25a14 10 0 0 1 28 0" fill="url(#hg-sh3)" ${O} transform="rotate(-18 6 25)"/><circle cx="20" cy="23" r="5.5" fill="url(#hg-pearl)" ${O}/><circle cx="18.3" cy="21.3" r="1.6" fill="#fff"/>`,
+      `<ellipse cx="20" cy="34" rx="14" ry="2.4" fill="#000" opacity=".15"/><rect x="6" y="18" width="28" height="15" rx="2.5" fill="url(#hg-wood)" ${O}/><path d="M6 18c0-9 28-9 28 0" fill="url(#hg-wood)" ${O} transform="rotate(-22 6 18)"/><circle cx="14" cy="17" r="3.2" fill="url(#hg-pearl)" ${O}/><circle cx="20.5" cy="15" r="3.2" fill="url(#hg-pearl)" ${O}/><circle cx="27" cy="17" r="3.2" fill="url(#hg-pearl)" ${O}/><rect x="17.5" y="22" width="5" height="6" rx="1" fill="#ffd23f" ${O}/><path d="M6 25h28" stroke="#2b2230" stroke-opacity=".3"/>`,
     ],
   },
   {
     id: 'gear', name: 'Снасті', unlock: 2, tiers: ['Мотузка', 'Вузол', 'Сітка', 'Вудка', 'Якір'],
     art: [
-      `<ellipse cx="20" cy="24" rx="11" ry="7" fill="none" stroke="#c9a27a" stroke-width="4"/><ellipse cx="20" cy="24" rx="6" ry="3.5" fill="none" stroke="#a8743f" stroke-width="3"/>`,
-      `<path d="M8 22c6-8 10 8 16 0s8 4 8 4" fill="none" stroke="#c9a27a" stroke-width="5" stroke-linecap="round"/><circle cx="20" cy="21" r="4" fill="#a8743f" stroke="#1b1b1f"/>`,
-      `<rect x="9" y="10" width="22" height="22" rx="3" fill="none" stroke="#3a6f8f" stroke-width="1.5"/><path d="M9 17h22M9 24h22M16 10v22M23 10v22" stroke="#3a6f8f" stroke-width="1.5"/><circle cx="9" cy="10" r="2.5" fill="#ff8a1f"/><circle cx="31" cy="32" r="2.5" fill="#ff8a1f"/>`,
-      `<path d="M8 33L30 8" stroke="#8a5a2b" stroke-width="3" stroke-linecap="round"/><path d="M30 8q4 10 1 18" fill="none" stroke="#555" stroke-width="1"/><circle cx="31" cy="27" r="2.5" fill="#e8443a" stroke="#1b1b1f"/><circle cx="12" cy="29" r="3.5" fill="#666" stroke="#1b1b1f"/>`,
-      `<path d="M20 9v22M13 15h14M9 24q2 9 11 9t11-9" fill="none" stroke="#5b6b8c" stroke-width="3.5" stroke-linecap="round"/><circle cx="20" cy="8" r="3" fill="none" stroke="#5b6b8c" stroke-width="2.5"/><path d="M7 25l3-3 2 4zM33 25l-3-3-2 4z" fill="#5b6b8c"/>`,
+      `<ellipse cx="20" cy="33" rx="12" ry="2.4" fill="#000" opacity=".15"/><ellipse cx="20" cy="25" rx="12" ry="7" fill="none" stroke="#7a5038" stroke-width="5.6"/><ellipse cx="20" cy="25" rx="12" ry="7" fill="none" stroke="url(#hg-rope)" stroke-width="4"/><ellipse cx="20" cy="25" rx="6.5" ry="3.6" fill="none" stroke="#7a5038" stroke-width="4.4"/><ellipse cx="20" cy="25" rx="6.5" ry="3.6" fill="none" stroke="url(#hg-rope)" stroke-width="3"/>`,
+      `<ellipse cx="20" cy="33" rx="12" ry="2.4" fill="#000" opacity=".15"/><path d="M7 23c6-9 10 9 16 0s9 4 9 4" fill="none" stroke="#7a5038" stroke-width="6.4" stroke-linecap="round"/><path d="M7 23c6-9 10 9 16 0s9 4 9 4" fill="none" stroke="url(#hg-rope)" stroke-width="4.6" stroke-linecap="round"/><circle cx="20" cy="22" r="4.6" fill="url(#hg-rope)" ${O}/>`,
+      `<ellipse cx="20" cy="34" rx="12" ry="2.4" fill="#000" opacity=".15"/><rect x="8" y="9" width="24" height="24" rx="4" fill="url(#hg-net)" fill-opacity=".35" ${O}/><path d="M8 17h24M8 25h24M16 9v24M24 9v24" stroke="#2b6a8a" stroke-width="1.6"/><circle cx="8" cy="9" r="3" fill="#ff8a1f" ${O}/><circle cx="32" cy="33" r="3" fill="#ff8a1f" ${O}/>`,
+      `<ellipse cx="20" cy="35" rx="12" ry="2.2" fill="#000" opacity=".15"/><path d="M8 33L31 8" stroke="#2b2230" stroke-width="4.2" stroke-linecap="round"/><path d="M8 33L31 8" stroke="url(#hg-rod)" stroke-width="2.8" stroke-linecap="round"/><path d="M31 8q5 11 1 19" fill="none" stroke="#555" stroke-width="1"/><circle cx="32" cy="28" r="2.8" fill="#e8443a" ${O}/><circle cx="12" cy="29" r="4" fill="url(#hg-anc)" ${O}/>`,
+      `<ellipse cx="20" cy="35" rx="13" ry="2.2" fill="#000" opacity=".15"/><path d="M20 10v22M13 16h14M8 25q2 9 12 9t12-9" fill="none" stroke="#2b2230" stroke-width="5.6" stroke-linecap="round"/><path d="M20 10v22M13 16h14M8 25q2 9 12 9t12-9" fill="none" stroke="url(#hg-anc)" stroke-width="3.8" stroke-linecap="round"/><circle cx="20" cy="8" r="3.4" fill="none" stroke="#2b2230" stroke-width="4"/><circle cx="20" cy="8" r="3.4" fill="none" stroke="url(#hg-anc)" stroke-width="2.4"/><path d="M6 26l3.5-3.5 2.5 4.5zM34 26l-3.5-3.5-2.5 4.5z" fill="url(#hg-anc)" ${O}/>`,
     ],
   },
 ];
-export const CRATE = `<rect x="5" y="9" width="30" height="24" rx="3" fill="#b07a45" stroke="#1b1b1f" stroke-width="1.5"/><path d="M5 17h30M5 25h30" stroke="#8a5a2b" stroke-width="2"/><path d="M8 9l24 24M32 9L8 33" stroke="#8a5a2b" stroke-width="1.5" opacity=".5"/><rect x="12" y="4" width="16" height="8" rx="2" fill="#3d8bff" stroke="#1b1b1f"/><path d="M15 8h7l3-2v4l-3-2" fill="#fff"/>`;
+export const CRATE = `<ellipse cx="20" cy="35" rx="15" ry="2.6" fill="#000" opacity=".2"/><rect x="5" y="10" width="30" height="24" rx="3" fill="url(#hg-wood)" ${O}/><path d="M5 18h30M5 26h30" stroke="#6b4429" stroke-width="1.8"/><path d="M8 10l24 24M32 10L8 34" stroke="#6b4429" stroke-width="1.4" opacity=".45"/><rect x="11" y="4" width="18" height="9" rx="2.5" fill="url(#hg-f3)" ${O}/><path d="M14.5 8.5h7l3-2.2v4.4l-3-2.2" fill="#fff"/>`;
 
 /** harbour scene; parts appear as chapters are completed */
 export const RESTORE = ['Причал', 'Рибальський човен', 'Маяк', 'Рибний ринок', 'Свято гавані', 'Гавань процвітає'];

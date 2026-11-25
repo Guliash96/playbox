@@ -18,7 +18,7 @@ const home = () => { location.hash = ''; };
 async function route() {
   const id = location.hash.slice(1), info = GAMES.find(g => g.id === id && g.load);
   const my = ++seq;
-  closeModal(); cur?.stop?.(); cur = null; if (Score.pts > 0) Score.commit(); Score.game = ''; Score.render();
+  closeModal(); cur?.stop?.(); cur = null; if (Score.pts > 0) Score.commit(); Score.stop();
   const game = $('#game');
   if (!info) {
     game.hidden = true; game.className = ''; $('#hub').hidden = false; renderHub(); setBackButton(false); return;
@@ -29,7 +29,7 @@ async function route() {
   $('#hub').hidden = true; game.hidden = false; game.className = mod.theme || '';
   $('#gtitle').textContent = mod.title; $('#stage').innerHTML = ''; $('#stats').innerHTML = ''; $('#tools').innerHTML = '';
   extraTool.fn = () => leaderSheet(id, info.name);
-  Score.begin(id); cur = mod; mod.start($('#stage')); setBackButton(true);
+  Score.begin(id); cur = mod; (window as any).__game = mod; mod.start($('#stage')); setBackButton(true);
 }
 
 initPlatform(home);

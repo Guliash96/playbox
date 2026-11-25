@@ -92,7 +92,7 @@ button:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
 #scorebar{position:relative;z-index:2;flex:none;display:flex;justify-content:center;align-items:center;gap:6px;height:26px;margin-top:-4px}
 #scorebar:empty{display:none}
 #scorebar .sp{background:var(--panel);border:2px solid var(--line);border-radius:99px;padding:0 10px;font-size:14px;line-height:20px}
-#scorebar .sm{min-width:36px;text-align:center;border-radius:99px;border:2px solid var(--line);font-weight:700;font-size:14px;line-height:20px;background:#e9e2d3;color:#1b1b1f}
+#scorebar .sm{position:relative;overflow:hidden;min-width:40px;text-align:center;border-radius:99px;border:2px solid var(--line);font-weight:700;font-size:14px;line-height:20px;background:#e9e2d3;color:#1b1b1f}
 #scorebar .m2{background:#7fd1ff}#scorebar .m3{background:#ffd23f}#scorebar .m4{background:#ff9a3c}#scorebar .m5{background:#ff3d7f;color:#fff}
 #scorebar .sm.up{animation:mup .45s cubic-bezier(.3,1.6,.5,1)}
 @keyframes mup{from{transform:scale(1.8)}}
@@ -127,3 +127,6 @@ button.chip{border:0;cursor:pointer;font-family:inherit;max-width:55vw;overflow:
 .lb li.p1 span{color:#d4a017}.lb li.p2 span{color:#8c97a3}.lb li.p3 span{color:#b5651d}
 .lb li.me{background:#fff2b3;outline:2px solid #ffd23f}
 .myrank{text-align:center;font-weight:700;margin-top:8px}
+#scorebar .sm i{position:absolute;left:0;bottom:0;height:3px;background:#1b1b1f;opacity:.55}
+#scorebar .st{background:var(--panel);border:2px solid var(--line);border-radius:99px;padding:0 8px;font-size:13px;line-height:20px;opacity:.9}
+.lb li.me,.lb li.me *{color:#1b1b1f}

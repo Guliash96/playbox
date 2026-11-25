@@ -52,7 +52,7 @@ const Mahjong: Game & Record<string, any> = {
     this.tiles = new Map<string, Tile>(pos.map(k => [k, { k, f: faces[k], open: false, perm: false, seen: 0 }]));
     // a few tiles start open so the first moves are not blind
     shuffle([...this.tiles.values()]).slice(0, Math.max(2, Math.round(pos.length * .12))).forEach((x: Tile) => { x.open = x.perm = true; });
-    this.tray = [] as Tile[]; this.peek = null; this.hints = FREE_HINTS; this.busy = false; this.cont = false;
+    this.tray = [] as Tile[]; this.peek = null; this.hints = FREE_HINTS; this.busy = false; this.cont = false; this.auto = false; this.total = pos.length;
     this.el.innerHTML = `<div class="mjwrap"><div class="mj"></div><div class="tray">${range(SLOTS).map(() => '<i class="tslot"></i>').join('')}<div class="titems"></div></div></div>`;
     this.draw(); this.tools();
   },
@@ -92,7 +92,7 @@ const Mahjong: Game & Record<string, any> = {
       if (this.peek && this.peek !== x && !this.peek.perm) { this.peek.open = false; this.el$(this.peek.k)?.classList.remove('up', 'peek'); }
       x.open = true; x.seen++; if (x.seen >= 3) x.perm = true;
       this.peek = x; const e = this.el$(k); e.classList.add('up', 'peek'); haptic();
-      if (this.tray.some((y: Tile) => y.f === x.f)) { await sleep(380); if (this.tiles.get(k) === x) await this.toTray(x); }
+      if (this.tray.some((y: Tile) => y.f === x.f)) { this.busy = true; await sleep(800); this.busy = false; if (this.tiles.get(k) === x) await this.toTray(x); }
       return;
     }
     await this.toTray(x);
@@ -116,8 +116,17 @@ const Mahjong: Game & Record<string, any> = {
       this.tray = this.tray.filter((y: Tile, i: number) => i !== twin && y !== x); this.drawTray(); this.hud();
     }
     this.busy = false;
+    // last few tiles: collect the remaining pairs automatically
+    if (!this.auto && this.tiles.size && !this.tray.length && this.tiles.size <= Math.max(4, Math.ceil(this.total * .05))) { this.auto = true; setTimeout(() => this.autoFinish(), 300); return; }
     if (!this.tiles.size && !this.tray.length) return done('mj_lvl', this.lvl, () => this.load());
     if (this.tray.length >= SLOTS) this.fail();
+  },
+  async autoFinish() {
+    while (this.tiles.size && !this.dead) {
+      const x: Tile = [...this.tiles.values()][0], y: Tile = [...this.tiles.values()].find((z: Tile) => z !== x && z.f === x.f)!;
+      for (const z of [x, y]) { z.open = true; this.el$(z.k)?.classList.add('up'); }
+      await sleep(250); this.busy = false; await this.toTray(x); this.busy = false; await this.toTray(y); await sleep(120);
+    }
   },
   fail() {
     Score.bad(); haptic('err');

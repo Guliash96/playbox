@@ -58,8 +58,8 @@ export function person(kind: Kind, shirt: THREE.ColorRepresentation, opts: { wea
   }
   if (z) { arms.forEach(a => a.rotation.x = -1.45); body.rotation.x = .15; head.position.z = .06; }
   if (kind === 'soldier') {
-    arms.forEach((a, i) => { a.rotation.x = -1.35; a.rotation.z = i ? .35 : -.35; });
-    const gun = gunMesh(opts.weapon ?? 0); gun.position.set(0, .86, .42); gun.name = 'gun'; g.add(gun);
+    arms[1].rotation.set(-1.15, 0, .12); arms[0].rotation.set(-1.25, 0, -.55);
+    const gun = gunMesh(opts.weapon ?? 0); gun.position.set(.3, 1.02, .3); gun.scale.setScalar(1.7); gun.name = 'gun'; g.add(gun);
   }
   g.userData = { arms, legs, kind, t: Math.random() * 6, body };
   if (kind === 'boss') { g.scale.setScalar(2.4); body.scale.set(1.35, 1.2, 1.2); }
@@ -77,7 +77,7 @@ export function animate(p: Person, dt: number, speed = 1) {
 }
 
 /** swap the soldier's gun */
-export function setGun(p: Person, tier: number) { const old = p.getObjectByName('gun'); if (old) p.remove(old); const g = gunMesh(tier); g.position.set(0, .86, .42); g.name = 'gun'; p.add(g); }
+export function setGun(p: Person, tier: number) { const old = p.getObjectByName('gun'); if (old) p.remove(old); const g = gunMesh(tier); g.position.set(.3, 1.02, .3); g.scale.setScalar(1.7); g.name = 'gun'; p.add(g); }
 
 // ---------- instanced crowds: tinted bodies + skin heads with eyes, posed per frame ----------
 function colored(geo: THREE.BufferGeometry, c: THREE.ColorRepresentation) {

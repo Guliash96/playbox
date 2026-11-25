@@ -33,15 +33,28 @@ function generate(W: number, buses: number, k: number, nc: number) {
   return { seq, cols };
 }
 
+/** k=2: minibus with a short nose (10 people), k=3: bus (15), k=4: long bus (20) */
 function busModel(col: string, k: number) {
-  const g = new THREE.Group(), L = 2.4 + k * .95, body = mat(col, { roughness: .35, metalness: .1 }), glass = mat(0x22364f, { roughness: .1, metalness: .4 });
+  const g = new THREE.Group(), mini = k <= 2, L = mini ? 2.9 : 2.4 + k * .95, body = mat(col, { roughness: .35, metalness: .1 }), glass = mat(0x22364f, { roughness: .1, metalness: .4 });
+  const dark = mat(new THREE.Color(col).multiplyScalar(.7)), white = mat(0xffffff);
   const add = (m: THREE.Mesh, x: number, y: number, z = 0) => { m.position.set(x, y, z); g.add(m); return m; };
-  add(mesh(new RoundedBoxGeometry(L, 1.25, 1.35, 3, .22), body), 0, .95);
-  add(mesh(new RoundedBoxGeometry(L - .1, .12, 1.37, 2, .05), mat(0xffffff)), 0, 1.6);
-  add(mesh(new RoundedBoxGeometry(L - .7, .48, 1.38, 2, .08), glass), -.15, 1.18);
-  add(mesh(new RoundedBoxGeometry(.08, .6, 1.2, 2, .03), glass), L / 2, 1.12);
-  add(mesh(new RoundedBoxGeometry(.5, .95, .04, 2, .02), mat(0x9fd4f0, { roughness: .2 })), L / 2 - .55, .85, .69);
-  add(mesh(new THREE.BoxGeometry(L, .14, 1.38), mat(new THREE.Color(col).multiplyScalar(.7))), 0, .4);
+  if (mini) {
+    const BL = L - .7;
+    add(mesh(new RoundedBoxGeometry(BL, 1.2, 1.3, 3, .2), body), -.35, .95);
+    add(mesh(new RoundedBoxGeometry(.85, .62, 1.26, 3, .18), body), L / 2 - .45, .65);
+    add(mesh(new RoundedBoxGeometry(.06, .5, 1.1, 2, .03), glass), BL / 2 - .3, 1.2).rotation.z = -.35;
+    add(mesh(new RoundedBoxGeometry(BL - .5, .44, 1.32, 2, .08), glass), -.5, 1.15);
+    add(mesh(new RoundedBoxGeometry(BL - .1, .1, 1.32, 2, .04), white), -.35, 1.56);
+    add(mesh(new RoundedBoxGeometry(.4, .85, .04, 2, .02), mat(0x9fd4f0, { roughness: .2 })), BL / 2 - .6, .85, .66);
+    add(mesh(new THREE.BoxGeometry(L, .14, 1.32), dark), 0, .4);
+  } else {
+    add(mesh(new RoundedBoxGeometry(L, 1.25, 1.35, 3, .22), body), 0, .95);
+    add(mesh(new RoundedBoxGeometry(L - .1, .12, 1.37, 2, .05), white), 0, 1.6);
+    add(mesh(new RoundedBoxGeometry(L - .7, .48, 1.38, 2, .08), glass), -.15, 1.18);
+    add(mesh(new RoundedBoxGeometry(.08, .6, 1.2, 2, .03), glass), L / 2, 1.12);
+    add(mesh(new RoundedBoxGeometry(.5, .95, .04, 2, .02), mat(0x9fd4f0, { roughness: .2 })), L / 2 - .55, .85, .69);
+    add(mesh(new THREE.BoxGeometry(L, .14, 1.38), dark), 0, .4);
+  }
   for (const x of [L / 2 - .6, -L / 2 + .6]) for (const z of [.6, -.6]) { const w = add(mesh(new THREE.CylinderGeometry(.3, .3, .2, 16).rotateX(Math.PI / 2), mat(0x1e1e22, { roughness: .9 })), x, .3, z); w.castShadow = true; add(mesh(new THREE.CylinderGeometry(.13, .13, .21, 10).rotateX(Math.PI / 2), mat(0xd9dde3, { metalness: .6 })), x, .3, z); }
   for (const z of [.4, -.4]) add(mesh(new THREE.BoxGeometry(.04, .14, .22), mat(0xfff3b0, { emissive: 0xffe680, emissiveIntensity: .8 }), false), L / 2 + .01, .55, z);
   g.userData.L = L; return g;
@@ -76,7 +89,7 @@ const Bus: Game & Record<string, any> = {
     for (const o of this.temp || []) sc.remove(o); this.temp = [];
     this.crowd?.dispose(sc); this.bus && sc.remove(this.bus);
     const L = this.lvl = store.get('bj_lvl', 1);
-    this.W = Math.min(6, 4 + Math.floor(L / 3)); this.k = L < 4 ? 2 : L < 8 ? 3 : 4;
+    this.W = Math.min(6, 4 + Math.floor(L / 3)); this.k = L < 3 ? 2 : L < 7 ? 3 : 4;
     const g = generate(this.W, 7 + L, this.k, Math.min(6, 3 + Math.floor(L / 3)));
     this.buses = g.seq; this.bi = 0; this.seats = 0; this.seated = 0; this.ready = false; this.over = false; this.cont = false; this.cap = HOLD;
     this.hold = [] as ({ g: Grp; here: boolean } | null)[];
@@ -150,7 +163,7 @@ const Bus: Game & Record<string, any> = {
     if (toBus) { this.seats++; Score.good(10); this.walkGroup(g, [[x, PLAT + .3], [this.door()[0], PLAT + .2], this.door()], () => this.boarded()); }
     else {
       Score.bad(); const h = { g, here: false }; this.hold[slot] = h;
-      this.walkGroup(g, [[x, PLAT + .3], [this.slotX(slot), PLAT + .1]], () => { h.here = true; this.checkFail(); }, false);
+      this.walkGroup(g, [[x, PLAT + .3], [this.slotX(slot), PLAT + .1]], () => { h.here = true; if (this.ready) this.autoBoard(); else this.checkFail(); }, false);
     }
     // the queue steps forward
     col.forEach((gg, k) => gg.people.forEach((i, j) => { const [cx, cz] = this.cellPos(ci, k); this.pp[i].way = [[cx + OFF[j][0], cz + OFF[j][1]]]; }));

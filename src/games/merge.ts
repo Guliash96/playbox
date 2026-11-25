@@ -6,11 +6,13 @@ import { store } from '../core/store';
 import { haptic } from '../core/platform';
 import { setStats, setTools, modal, toast, pill, flash } from '../core/ui';
 import { Ads } from '../core/ads';
-import { CHAINS, CRATE, harborScene, RESTORE } from '../art/harbor';
+import { CHAINS, CRATE, harborScene, RESTORE, ensureHarborDefs } from '../art/harbor';
 import { Score } from '../core/score';
+import { t } from '../core/i18n';
+import { sfx } from '../core/sfx';
 import type { Game } from './registry';
 
-const COLS = 7, ROWS = 8, GEN = 3 * COLS + 3, EMAX = 40, EREGEN = 20_000;
+const COLS = 7, ROWS = 7, GEN = 3 * COLS + 3, EMAX = 40, EREGEN = 20_000;
 type Item = { c: number; t: number } | null;
 interface Order { who: number; need: { c: number; t: number }[]; stars: number }
 const FOLK = [{ n: 'Captain Jack', hat: '#1f3a8a', skin: '#f2c9a0' }, { n: 'Granny Rose', hat: '#ff7ab2', skin: '#f5d4b3' }, { n: 'Deckhand Tom', hat: '#e8443a', skin: '#e9b98f' }, { n: 'Fisher Mia', hat: '#3fbf5f', skin: '#c99872' }, { n: 'Old Sam', hat: '#7b5cff', skin: '#8d5a3b' }];
@@ -29,8 +31,9 @@ const Merge: Game & Record<string, any> = {
   title: 'Гавань', theme: 'th-merge',
   start(el: HTMLElement) {
     this.el = el;
+    ensureHarborDefs();
     const s = store.get<any>('mg_state', null);
-    if (s) Object.assign(this, s); else this.fresh();
+    if (s) { Object.assign(this, s); this.board = this.board.slice(0, COLS * ROWS); while (this.board.length < COLS * ROWS) this.board.push(null); } else this.fresh();
     this.regen(); this.timer = setInterval(() => { this.regen(); this.hud(); }, 1000);
     this.render();
     setTools([['Енергія за рекламу', () => Ads.rewarded(() => { this.energy = Math.min(EMAX + 20, this.energy + 20); this.save(); this.hud(); })], ['Історія', () => this.story(false)]]);
@@ -39,7 +42,7 @@ const Merge: Game & Record<string, any> = {
   stop() { clearInterval(this.timer); this.unbind?.(); },
   fresh() {
     this.board = Array(COLS * ROWS).fill(null) as Item[]; this.energy = EMAX; this.etime = Date.now(); this.ch = 0; this.stars = 0; this.orders = [] as Order[];
-    for (let k = 0; k < 6; k++) this.board[[0, 6, 49, 55, 8, 47][k]] = { c: k % 2, t: k < 4 ? 0 : 1 };
+    for (let k = 0; k < 6; k++) this.board[[0, 6, 42, 48, 8, 40][k]] = { c: k % 2, t: k < 4 ? 0 : 1 };
     this.fillOrders();
   },
   save() { const { board, energy, etime, ch, stars, orders } = this; store.set('mg_state', { board, energy, etime, ch, stars, orders }); },
@@ -54,19 +57,18 @@ const Merge: Game & Record<string, any> = {
   },
   hud() { setStats(`${pill('Енергія ' + this.energy + '/' + EMAX)}${pill('Зірки ' + this.stars + '/' + this.goal())}`); },
   render() {
-    const cs = this.cs = Math.floor(Math.min((this.el.clientWidth - 24) / COLS, (this.el.clientHeight - 300) / ROWS, 56));
+    const small = this.el.clientHeight < 600;
+    const cs = this.cs = Math.floor(Math.min((this.el.clientWidth - 30) / COLS, (this.el.clientHeight - (small ? 250 : 290)) / ROWS, 60));
     const pct = Math.min(100, this.stars / this.goal() * 100);
-    this.el.innerHTML = `<div class="mg" style="--cs:${cs}px">
-      <div class="scene">${harborScene(this.ch)}</div>
-        <div class="goal"><span class="gt">Мета: <b>${RESTORE[this.ch]}</b></span><span class="chbar"><span style="width:${pct}%"></span><b>★ ${this.stars} / ${this.goal()}</b></span></div>
+    this.el.innerHTML = `<div class="mg${small ? ' small' : ''}" style="--cs:${cs}px">
+      <div class="scene">${harborScene(this.ch)}<div class="goal"><span class="gt">${t('Мета:')} <b>${t(RESTORE[this.ch])}</b></span><span class="chbar"><span style="width:${pct}%"></span><b>★ ${this.stars} / ${this.goal()}</b></span></div></div>
       <div class="orders">${this.orders.map((o: Order, i: number) => { const ok = this.canFill(o); return `
         <div class="order${ok ? ' ready' : ''}">
-          <div class="otop"><span class="who">${face(o.who)}</span><span class="nm">${FOLK[o.who].n.split(' ')[1] || FOLK[o.who].n}</span></div>
-          <div class="need">${o.need.map(n => `<span class="ni${this.has(n) ? ' ok' : ''}" title="${CHAINS[n.c].tiers[n.t]}">${itemSVG(n)}<i>${n.t + 1}</i></span>`).join('')}</div>
-          <button class="give" data-o="${i}" ${ok ? '' : 'disabled'}>${ok ? 'Здати' : 'Потрібно'} <b>+${o.stars}★</b></button>
+          <div class="otop"><span class="who">${face(o.who)}</span><span class="nm">${FOLK[o.who].n.split(' ').pop()}</span></div>
+          <div class="need">${o.need.map(n => `<span class="ni${this.has(n) ? ' ok' : ''}">${itemSVG(n)}<i>${n.t + 1}</i></span>`).join('')}</div>
+          <button class="give" data-o="${i}" ${ok ? '' : 'disabled'}>${ok ? t('Здати') : '★'} +${o.stars}</button>
         </div>`; }).join('')}</div>
-      <div class="mboard" style="grid-template-columns:repeat(${COLS},var(--cs))">${this.board.map((it: Item, i: number) => i === GEN ? `<button class="cell gen" data-i="${i}" aria-label="ящик"><svg viewBox="0 0 40 40">${CRATE}</svg><small>−1</small></button>` : `<button class="cell${it && this.wanted(it) ? ' want' : ''}" data-i="${i}">${itemSVG(it)}${it ? `<i class="tier">${it.t + 1}</i>` : ''}</button>`).join('')}</div>
-      <div class="info" id="minfo">Тапни ящик, щоб отримати предмет. Перетягни два однакові, щоб злити. Виконуй замовлення, щоб отримати зірки.</div></div>`;
+      <div class="mboard" style="grid-template-columns:repeat(${COLS},var(--cs))">${this.board.map((it: Item, i: number) => i === GEN ? `<button class="cell gen" data-i="${i}" aria-label="ящик"><svg viewBox="0 0 40 40">${CRATE}</svg><small>−1</small></button>` : `<button class="cell${it && this.wanted(it) ? ' want' : ''}" data-i="${i}">${itemSVG(it)}${it ? `<i class="tier">${it.t + 1}</i>` : ''}</button>`).join('')}</div></div>`;
     this.el.querySelectorAll('.give').forEach((b: HTMLElement) => b.onclick = () => this.give(+b.dataset.o!));
     this.bindDrag(); this.hud();
   },
@@ -96,7 +98,7 @@ const Merge: Game & Record<string, any> = {
     haptic(); this.save(); this.render(); const cell = this.el.querySelector(`[data-i="${k}"]`); cell?.classList.add('spawned');
     flash(this.el.querySelector('.gen'), 'pump', 300);
   },
-  info(i: number) { const it = this.board[i]; if (!it) return; const ch = CHAINS[it.c]; this.el.querySelector('#minfo').textContent = `${ch.tiers[it.t]} · ${ch.name}, рівень ${it.t + 1} з ${ch.tiers.length}${it.t + 1 < ch.tiers.length ? ' → ' + ch.tiers[it.t + 1] : ' (максимум)'}`; },
+  info(i: number) { const it = this.board[i]; if (!it) return; const ch = CHAINS[it.c]; toast( `${ch.tiers[it.t]} · ${ch.name}, рівень ${it.t + 1} з ${ch.tiers.length}${it.t + 1 < ch.tiers.length ? ' → ' + ch.tiers[it.t + 1] : ' (максимум)'}`); },
   bindDrag() {
     const board = this.el.querySelector('.mboard');
     board.onpointerdown = (e: PointerEvent) => {
@@ -104,7 +106,7 @@ const Merge: Game & Record<string, any> = {
       const i = +cell.dataset.i!; e.preventDefault();
       if (i === GEN) return this.spawn();
       const it = this.board[i]; if (!it) return;
-      this.info(i); this.el.querySelectorAll('.cell.sel').forEach((c: Element) => c.classList.remove('sel')); cell.classList.add('sel');
+      this.el.querySelectorAll('.cell.sel').forEach((c: Element) => c.classList.remove('sel')); cell.classList.add('sel');
       const g = document.createElement('div'); g.className = 'mdrag'; g.style.cssText = `width:${this.cs}px;height:${this.cs}px`; g.innerHTML = itemSVG(it);
       let moved = false, sx = e.clientX, sy = e.clientY;
       const mv = (ev: PointerEvent) => {
@@ -114,7 +116,7 @@ const Merge: Game & Record<string, any> = {
       };
       const up = (ev: PointerEvent) => {
         removeEventListener('pointermove', mv); removeEventListener('pointerup', up); g.remove(); cell.classList.remove('lift');
-        if (!moved) return;
+        if (!moved) { this.info(i); return; }
         const over = document.elementFromPoint(ev.clientX, ev.clientY - (ev.pointerType === 'mouse' ? 0 : 24))?.closest('.mboard .cell') as HTMLElement;
         if (!over) return; const j = +over.dataset.i!; if (j === i || j === GEN) return;
         this.drop(i, j);
@@ -125,7 +127,7 @@ const Merge: Game & Record<string, any> = {
   drop(i: number, j: number) {
     const a: Item = this.board[i], b: Item = this.board[j];
     if (b && a && a.c === b.c && a.t === b.t && a.t + 1 < CHAINS[a.c].tiers.length) {
-      this.board[j] = { c: a.c, t: a.t + 1 }; this.board[i] = null; haptic('ok'); Score.good(5 * (a.t + 1));
+      this.board[j] = { c: a.c, t: a.t + 1 }; this.board[i] = null; sfx('merge'); Score.good(5 * (a.t + 1));
       this.save(); this.render(); this.el.querySelector(`[data-i="${j}"]`)?.classList.add('merged'); this.info(j); return;
     }
     this.board[j] = a; this.board[i] = b; haptic(); this.save(); this.render();

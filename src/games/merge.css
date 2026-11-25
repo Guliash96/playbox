@@ -1,6 +1,7 @@
-#game.th-merge{background:linear-gradient(#9fd6ff,#d9f0ff 30%,#f3e2bf 31%,#e8cf9c)}
-.mg{display:flex;flex-direction:column;align-items:center;gap:8px;width:calc(var(--cs)*7 + 20px);max-width:100%}
-.scene{position:relative;width:100%;height:96px;border-radius:18px;overflow:hidden;border:3px solid #1b1b1f;box-shadow:0 6px 0 #1b1b1f}
+#game.th-merge{background:linear-gradient(#9fd6ff,#d9f0ff 26%,#f3e2bf 27%,#e8cf9c)}
+.mg{display:flex;flex-direction:column;align-items:center;gap:8px;width:min(100%,calc(var(--cs)*7 + 40px));max-width:440px}
+.scene{position:relative;width:100%;height:104px;border-radius:18px;overflow:hidden;border:3px solid #1b1b1f;box-shadow:0 5px 0 #1b1b1f;flex:none}
+.mg.small .scene{height:84px}
 .scene svg,.storypic svg{width:100%;height:100%;display:block}
 .scene .boat{animation:boat 3s ease-in-out infinite alternate}
 @keyframes boat{to{transform:translate(5px,2px) rotate(.6deg)}}
@@ -8,35 +9,34 @@
 @keyframes waves{to{transform:translateX(-40px)}}
 .scene .gulls{animation:gull 9s linear infinite}
 @keyframes gull{from{transform:translateX(-200px)}to{transform:translateX(260px)}}
-.goal{width:100%;display:flex;gap:6px;align-items:center;margin-top:-2px}
-.gt{background:rgba(255,255,255,.92);border:2px solid #1b1b1f;border-radius:10px;padding:1px 8px;font-size:12px;white-space:nowrap}
-.chbar{position:relative;flex:1;height:22px;border-radius:99px;background:rgba(255,255,255,.92);border:2px solid #1b1b1f;overflow:hidden}
+.goal{position:absolute;left:6px;right:6px;bottom:5px;display:flex;gap:6px;align-items:center}
+.gt{background:rgba(255,255,255,.94);border:2px solid #1b1b1f;border-radius:10px;padding:0 8px;font-size:12px;line-height:18px;white-space:nowrap;color:#1b1b1f}
+.chbar{position:relative;flex:1;height:22px;border-radius:99px;background:rgba(255,255,255,.94);border:2px solid #1b1b1f;overflow:hidden}
 .chbar>span{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#ffd23f,#ffb020);transition:width .4s}
 .chbar b{position:relative;display:block;text-align:center;font-size:12px;line-height:18px;color:#1b1b1f}
 .storypic{height:130px;border-radius:14px;overflow:hidden;border:3px solid #1b1b1f;margin-bottom:12px}
-.orders{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;width:100%}
-.order{display:flex;flex-direction:column;gap:4px;padding:6px;border-radius:16px;background:#fffaf0;border:2px solid #1b1b1f;box-shadow:0 3px 0 #1b1b1f}
-.order.ready{background:#eaffdf;box-shadow:0 3px 0 #1b1b1f,0 0 0 3px #3fbf5f;animation:ready 1.2s ease-in-out infinite}
-@keyframes ready{50%{transform:translateY(-2px)}}
-.otop{display:flex;align-items:center;gap:4px}
-.order .who{width:26px;height:26px;flex:none}.order .who svg{width:100%;height:100%}
-.order .nm{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.orders{display:flex;gap:8px;width:100%;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 2px 6px;flex:none}
+.order{flex:1 0 104px;min-width:104px;scroll-snap-align:start;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px;border-radius:16px;background:#fffaf0;border:2px solid #1b1b1f;box-shadow:0 3px 0 #1b1b1f;color:#1b1b1f}
+.order.ready{background:#eaffdf;box-shadow:0 3px 0 #1b1b1f,0 0 0 3px #3fbf5f}
+.otop{display:flex;align-items:center;gap:5px;width:100%}
+.order .who{width:26px;height:26px;flex:none;display:block}.order .who svg{width:26px;height:26px;display:block}
+.order .nm{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .order .need{display:flex;gap:4px;justify-content:center}
-.order .ni{position:relative;width:40px;height:40px;border-radius:10px;background:#f1e3c4;border:2px dashed #c9a77a;display:flex}
+.order .ni{position:relative;width:38px;height:38px;flex:none;border-radius:10px;background:#f1e3c4;border:2px dashed #c9a77a;display:block}
 .order .ni.ok{background:#d4f5c2;border:2px solid #3fbf5f}
-.order .ni svg{width:100%;height:100%}
-.order .ni i,.cell .tier{position:absolute;right:-3px;bottom:-3px;min-width:15px;height:15px;border-radius:99px;background:#1b1b1f;color:#fff;font:600 10px/15px Fredoka;font-style:normal;text-align:center;padding:0 3px}
-.give{height:30px;border-radius:10px;border:2px solid #1b1b1f;background:#ffd23f;font:600 12px Fredoka;cursor:pointer;padding:0 4px;white-space:nowrap}
+.order .ni svg{width:34px;height:34px;display:block}
+.order .ni i,.cell .tier{position:absolute;right:-4px;bottom:-4px;min-width:16px;height:16px;border-radius:99px;background:#1b1b1f;color:#fff;font:600 10px/16px Fredoka;font-style:normal;text-align:center;padding:0 3px}
+.give{width:100%;height:28px;border-radius:10px;border:2px solid #1b1b1f;background:#ffd23f;font:600 12px Fredoka;cursor:pointer;padding:0 4px;white-space:nowrap;color:#1b1b1f}
 .give[disabled]{background:#efe6d3;color:#7a705e;cursor:default}
-.mboard{display:grid;gap:3px;padding:7px;border-radius:18px;background:repeating-linear-gradient(0deg,#b07a45 0 14px,#a06c3a 14px 16px);border:3px solid #1b1b1f;box-shadow:0 10px 20px rgba(90,60,20,.3),inset 0 2px 0 rgba(255,255,255,.3);touch-action:none}
-.cell{width:var(--cs);height:var(--cs);border:0;padding:0;border-radius:10px;background:radial-gradient(circle at 50% 40%,#fbf0d6,#ead3a4);box-shadow:inset 0 -3px 0 rgba(0,0,0,.12),inset 0 2px 0 rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
-.cell svg{width:90%;height:90%;filter:drop-shadow(0 2px 1.5px rgba(0,0,0,.3))}
-.cell .tier{right:1px;bottom:1px;opacity:.75}
+.mboard{display:grid;gap:3px;padding:7px;border-radius:18px;background:repeating-linear-gradient(0deg,#b07a45 0 14px,#a06c3a 14px 16px);border:3px solid #1b1b1f;box-shadow:0 10px 20px rgba(90,60,20,.3),inset 0 2px 0 rgba(255,255,255,.3);touch-action:none;flex:none}
+.cell{width:var(--cs);height:var(--cs);border:0;padding:0;border-radius:10px;background:radial-gradient(circle at 50% 38%,#fff6e0,#ecd5a6);box-shadow:inset 0 -3px 0 rgba(0,0,0,.14),inset 0 2px 0 rgba(255,255,255,.7);display:block;cursor:pointer;position:relative}
+.cell svg{position:absolute;left:4%;top:4%;width:92%;height:92%;display:block;filter:drop-shadow(0 2px 1.5px rgba(0,0,0,.25))}
+.cell .tier{right:1px;bottom:1px;opacity:.8;transform:scale(.85)}
 .cell.want{background:radial-gradient(circle at 50% 40%,#f2ffe9,#c9efb0);box-shadow:inset 0 0 0 2px #3fbf5f}
 .cell.sel{box-shadow:inset 0 0 0 3px #3d8bff}
 .cell.lift svg{opacity:.25}
-.cell.gen{background:radial-gradient(circle,#bfe3ff,#7fc4ff);box-shadow:inset 0 0 0 3px #1b1b1f}
-.cell.gen small{position:absolute;right:3px;bottom:1px;font-size:10px;font-weight:700}
+.cell.gen{background:radial-gradient(circle,#d9f0ff,#7fc4ff);box-shadow:inset 0 0 0 3px #1b1b1f}
+.cell.gen small{position:absolute;right:3px;bottom:1px;font-size:10px;font-weight:700;color:#1b1b1f}
 .cell.gen.pump svg{animation:pump .3s}
 @keyframes pump{50%{transform:scale(1.18)}}
 .cell.spawned svg{animation:spawnI .4s cubic-bezier(.3,1.6,.5,1)}
@@ -44,5 +44,4 @@
 .cell.merged svg{animation:mergeI .5s cubic-bezier(.3,1.6,.5,1)}
 @keyframes mergeI{from{transform:scale(.4) rotate(-20deg);filter:brightness(2)}}
 .mdrag{position:fixed;z-index:60;pointer-events:none;filter:drop-shadow(0 10px 6px rgba(0,0,0,.35))}
-.mdrag svg{width:100%;height:100%}
-.info{font-size:12px;color:#5b4630;text-align:center;min-height:18px;padding:0 6px}
+.mdrag svg{width:100%;height:100%;display:block}

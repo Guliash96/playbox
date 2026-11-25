@@ -8,6 +8,7 @@ import { setStats, setTools, modal, pill } from '../core/ui';
 import { gameOver } from '../core/flow';
 import { Stage, THREE, RoundedBoxGeometry, mat, mesh } from '../core/three';
 import { Score } from '../core/score';
+import { sfx } from '../core/sfx';
 import type { Game } from './registry';
 
 const LANE = 1.7, SKY = 0xcfe4ff;
@@ -42,7 +43,7 @@ function snowman() {
 }
 function rock() { const g = new THREE.Group(); const r = mesh(G.rock, M.rock); r.scale.set(1, .55, .8); r.position.y = .2; g.add(r); const s = mesh(G.rock, M.snow); s.scale.set(.7, .25, .6); s.position.y = .46; g.add(s); return g; }
 function log() { const g = new THREE.Group(); const l = mesh(G.log, M.wood); l.position.y = .24; g.add(l); for (const x of [-.75, .75]) { const e = mesh(G.logEnd, M.woodEnd, false); e.rotation.y = x > 0 ? Math.PI / 2 : -Math.PI / 2; e.position.set(x + (x > 0 ? .001 : -.001), .24, 0); g.add(e); } const s = mesh(new RoundedBoxGeometry(1.3, .08, .3, 2, .04), M.snow); s.position.y = .47; g.add(s); return g; }
-function coin() { const m = mesh(G.coin, M.gold); m.position.y = .7; return m; }
+function coin() { const g = new THREE.Group(), m = mesh(G.coin, M.gold); m.position.y = .7; g.add(m); return g; }
 function rider() {
   const g = new THREE.Group();
   const sled = mesh(new RoundedBoxGeometry(.78, .12, 1.25, 3, .05), M.red); sled.position.y = .24; g.add(sled);
@@ -52,11 +53,10 @@ function rider() {
     for (const z of [-.35, .35]) { const p = mesh(new THREE.BoxGeometry(.04, .16, .04), M.wood); p.position.set(x, .16, z); g.add(p); }
   }
   const body = mesh(new THREE.CapsuleGeometry(.24, .32, 6, 12), M.blue); body.position.set(0, .66, .12); body.rotation.x = -.25; g.add(body);
-  const belt = mesh(new THREE.TorusGeometry(.245, .04, 6, 16).rotateX(Math.PI / 2), M.yellow); belt.position.set(0, .58, .1); g.add(belt);
   const head = mesh(new THREE.SphereGeometry(.19, 16, 12), M.skin); head.position.set(0, 1.08, .02); g.add(head);
   const hat = mesh(new THREE.ConeGeometry(.2, .32, 14), M.pink); hat.position.set(0, 1.3, .03); hat.rotation.x = .25; g.add(hat);
   const pom = mesh(new THREE.SphereGeometry(.07, 10, 8), M.snow); pom.position.set(0, 1.46, .07); g.add(pom);
-  const scarf = mesh(new THREE.TorusGeometry(.17, .055, 8, 16).rotateX(Math.PI / 2), M.yellow); scarf.position.set(0, .92, .04); g.add(scarf);
+  const scarf = mesh(new THREE.TorusGeometry(.15, .05, 8, 16).rotateX(Math.PI / 2), M.yellow); scarf.position.set(0, .97, .03); g.add(scarf);
   for (const x of [-.27, .27]) { const a = mesh(new THREE.CapsuleGeometry(.065, .3, 4, 8), M.blue); a.position.set(x, .55, -.12); a.rotation.x = 1.1; g.add(a); }
   return g;
 }
@@ -100,17 +100,20 @@ const Runner: Game & Record<string, any> = {
   hud() { setStats(`${pill(Math.floor(this.score()))}${pill('Монети ' + this.coins)}${pill('Рекорд ' + this.best)}`); },
   score() { return this.dist + this.coins * 10; },
   bind() {
-    let sx = 0, sy = 0, st = 0; const el = this.el;
-    el.onpointerdown = (e: PointerEvent) => { sx = e.clientX; sy = e.clientY; st = performance.now(); };
-    el.onpointerup = (e: PointerEvent) => {
-      if (this.state === 'ready') { this.state = 'run'; el.querySelector('.rtip')?.remove(); return; }
-      if (this.state !== 'run') return;
+    let sx = 0, sy = 0, st = 0, swiped = false, down = false; const el = this.el;
+    const start = () => { if (this.state === 'ready') { this.state = 'run'; el.querySelector('.rtip')?.remove(); return true; } return false; };
+    el.onpointerdown = (e: PointerEvent) => { down = true; swiped = false; sx = e.clientX; sy = e.clientY; st = performance.now(); };
+    el.onpointermove = (e: PointerEvent) => {
+      if (!down || this.state !== 'run') return;
       const dx = e.clientX - sx, dy = e.clientY - sy;
-      if (Math.abs(dx) > 28 && Math.abs(dx) > Math.abs(dy)) this.move(dx > 0 ? 1 : -1);
-      else if (dy < -28) this.hop();
-      else if (performance.now() - st < 300) { const r = el.getBoundingClientRect(), x = (e.clientX - r.left) / r.width; x < .33 ? this.move(-1) : x > .67 ? this.move(1) : this.hop(); }
+      if (Math.abs(dx) > 22 && Math.abs(dx) > Math.abs(dy)) { this.move(dx > 0 ? 1 : -1); sx = e.clientX; sy = e.clientY; swiped = true; }
+      else if (dy < -26 && Math.abs(dy) > Math.abs(dx)) { this.hop(); sy = e.clientY; sx = e.clientX; swiped = true; }
     };
-    const kd = (e: KeyboardEvent) => { if (this.state === 'ready') { this.state = 'run'; this.el.querySelector('.rtip')?.remove(); } if (e.key === 'ArrowLeft') this.move(-1); if (e.key === 'ArrowRight') this.move(1); if (e.key === 'ArrowUp' || e.key === ' ') this.hop(); };
+    el.onpointerup = (e: PointerEvent) => {
+      down = false; if (start()) return; if (this.state !== 'run' || swiped) return;
+      if (performance.now() - st < 300) { const r = el.getBoundingClientRect(), x = (e.clientX - r.left) / r.width; x < .33 ? this.move(-1) : x > .67 ? this.move(1) : this.hop(); }
+    };
+    const kd = (e: KeyboardEvent) => { if (start()) return; if (e.key === 'ArrowLeft') this.move(-1); if (e.key === 'ArrowRight') this.move(1); if (e.key === 'ArrowUp' || e.key === ' ') this.hop(); };
     addEventListener('keydown', kd); this.unbind = () => removeEventListener('keydown', kd);
   },
   move(d: number) { const n = Math.max(-1, Math.min(1, this.lane + d)); if (n !== this.lane) { this.lane = n; haptic(); } },
@@ -138,13 +141,13 @@ const Runner: Game & Record<string, any> = {
       this.tex.offset.y += dz / 4;
       for (const o of this.obs) {
         if (o.kind === 'deco' || o.got || Math.abs(o.o.position.z) > .65 || Math.abs(o.lane - this.px) > .45) continue;
-        if (o.kind === 'coin') { o.got = true; this.coins++; haptic(); Score.good(5); const c = o.o; this.st.tween(250, k => { c.position.y = .7 + k * 1.2; c.scale.setScalar(1 - k); }); continue; }
+        if (o.kind === 'coin') { o.got = true; this.coins++; sfx('coin'); Score.good(5); const c = o.o; this.st.tween(250, k => { c.position.y = k * 1.2; c.scale.setScalar(1 - k); }); continue; }
         if ((o.kind === 'rock' || o.kind === 'log') && this.jump > .4) continue;
         this.crash(); break;
       }
       if ((this.hudT = (this.hudT || 0) + dt) > .2) { this.hudT = 0; this.hud(); }
     }
-    for (const o of this.obs) if (o.kind === 'coin') o.o.rotation.y += dt * 4;
+    for (const o of this.obs) if (o.kind === 'coin') o.o.children[0].rotation.y += dt * 4;
     // rider pose + camera follow
     const x = this.px * LANE; p.position.set(x, this.jump * .55 + (run ? Math.sin(this.t * 18) * .015 : 0), 0);
     p.rotation.z = (this.px - this.lane) * .35; p.rotation.x = this.jump > 0 ? -this.vy * .02 : 0;

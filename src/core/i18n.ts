@@ -185,6 +185,8 @@ const TABLE = `
 У боса {0} HP. Подвоїти натовп за рекламу?|The boss has {0} HP. Double your crowd for an ad?|У босса {0} HP. Удвоить толпу за рекламу?|El jefe tiene {0} PV. ¿Duplicar tu multitud por un anuncio?|O chefe tem {0} HP. Dobrar a multidão por um anúncio?|Der Boss hat {0} HP. Menge für Werbung verdoppeln?|Le boss a {0} PV. Doubler ta foule contre une pub ?|Patronun {0} canı var. Reklamla kalabalığı ikiye katla?|Boss ma {0} HP. Podwoić tłum za reklamę?
 ×2 людей за рекламу|×2 people for an ad|×2 людей за рекламу|×2 personas por anuncio|×2 pessoas por anúncio|×2 Leute für Werbung|×2 personnes contre une pub|Reklamla ×2 kişi|×2 osób za reklamę
 Ні, вперед!|No, go!|Нет, вперёд!|¡No, adelante!|Não, vamos!|Nein, los!|Non, en avant !|Hayır, ileri!|Nie, naprzód!
+Звук: увімкнено|Sound: on|Звук: включён|Sonido: sí|Som: ligado|Ton: an|Son : activé|Ses: açık|Dźwięk: wł.
+Звук: вимкнено|Sound: off|Звук: выключен|Sonido: no|Som: desligado|Ton: aus|Son : coupé|Ses: kapalı|Dźwięk: wył.
 Без помилок: множник росте|No mistakes: the multiplier grows|Без ошибок: множитель растёт|Sin errores: el multiplicador sube|Sem erros: o multiplicador sobe|Fehlerfrei: Multiplikator steigt|Sans erreur : le multiplicateur monte|Hatasız: çarpan artar|Bez błędów: mnożnik rośnie
 `;
 

@@ -9,9 +9,25 @@ import { setStats, setTools, modal, pill, toast, flash } from '../core/ui';
 import { Ads } from '../core/ads';
 import { done } from '../core/flow';
 import { Score } from '../core/score';
+import { sfx } from '../core/sfx';
 import type { Game } from './registry';
 
-const PAL: Record<string, string> = { R: '#e8443a', W: '#f5efe2', Y: '#ffc533', K: '#3a3340', P: '#ff7ab2', O: '#ff9a3c', B: '#3d8bff', G: '#3fbf5f', N: '#8a5a2b' };
+const PAL: Record<string, string> = { R: '#e8443a', W: '#f5efe2', Y: '#ffc533', K: '#3a3340', P: '#ff7ab2', O: '#ff9a3c', B: '#3d8bff', G: '#3fbf5f', N: '#8a5a2b', C: '#18b5c4', V: '#7b5cff', L: '#9be37a' };
+/** symmetric blob sprite with a dark outline; grows and gets more colours with the level */
+function genPic(L: number): string[] {
+  const W = Math.min(16, 10 + Math.floor((L - 6) / 2)), H = W, k = Math.min(6, 2 + Math.floor((L - 6) / 2));
+  const cols = shuffle(['R', 'Y', 'P', 'O', 'B', 'G', 'C', 'V', 'L']).slice(0, k);
+  for (let t = 0; t < 60; t++) {
+    let m = Array.from({ length: H }, (_, y) => Array.from({ length: W }, (_, x) => { const dx = Math.abs(x - (W - 1) / 2) / (W / 2), dy = Math.abs(y - (H - 1) / 2) / (H / 2); return Math.random() < .9 - (dx * dx + dy * dy) * .75; }));
+    for (let it = 0; it < 3; it++) m = m.map((row, y) => row.map((v, x) => { let n = 0; for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) if ((a || b) && m[y + a]?.[x + b]) n++; return n >= 5 || (v && n >= 4); }));
+    m = m.map(row => row.map((v, x) => x < W / 2 ? v : row[W - 1 - x]));              // mirror
+    const n = m.flat().filter(Boolean).length; if (n < W * H * .45) continue;
+    const edge = (x: number, y: number) => !m[y - 1]?.[x] || !m[y + 1]?.[x] || !m[y]?.[x - 1] || !m[y]?.[x + 1];
+    const cx = (W - 1) / 2, cy = (H - 1) / 2, band = (x: number, y: number) => cols[Math.floor((Math.hypot((x - cx) * 1.2, y - cy) / (W / 2)) * k * .999 + (y > cy ? 1 : 0)) % k];
+    return m.map((row, y) => row.map((v, x) => !v ? '.' : edge(x, y) ? 'K' : band(x, y)).join(''));
+  }
+  return PICS[0];
+}
 const PICS = [
   ['..........', '.RR....RR.', 'RRRR..RRRR', 'RPRRRRRRRR', 'RRRRRRRRRR', '.RRRRRRRR.', '..RRRRRR..', '...RRRR...', '....RR....', '..........'],
   ['...RRRR...', '..RRWWRR..', '.RWWRRRRR.', 'RRRRRRWWRR', 'RWWRRRWWRR', 'RRRRRRRRRR', '..YYYYYY..', '..YKYYKY..', '..YYYYYY..', '...YYYY...'],
@@ -44,12 +60,12 @@ const Snake: Game & Record<string, any> = {
   load() {
     cancelAnimationFrame(this.raf);
     const L = this.lvl = store.get('sn_lvl', 1); this.dead = false; this.over = false;
-    const pic = PICS[(L - 1) % PICS.length]; this.H = pic.length; this.W = pic[0].length;
+    const pic = L <= PICS.length ? PICS[L - 1] : genPic(L); this.H = pic.length; this.W = pic[0].length;
     this.g = pic.flatMap(row => [...row].map(ch => ch === '.' ? null : ch));
     const count: Record<string, number> = {}; this.g.forEach((c: string) => c && (count[c] = (count[c] || 0) + 1));
     const lo = L < 3 ? 6 : 4, hi = L < 3 ? 14 : 10, all: Sn[] = [];
     for (const c in count) { let left = count[c]; while (left > 0) { const n = Math.min(left, lo + R(hi - lo + 1)); all.push({ c, n }); left -= n; } }
-    this.lanes = Array.from({ length: L < 4 ? 3 : 4 }, () => [] as Sn[]);
+    this.lanes = Array.from({ length: L < 4 ? 3 : L < 10 ? 4 : 5 }, () => [] as Sn[]);
     shuffle(all).forEach((s, i) => this.lanes[i % this.lanes.length].push(s));
     this.cap = L < 6 ? 5 : 4; this.nest = [] as Sn[]; this.cont = false; this.runs = [] as Run[]; this.queue = [] as Sn[];
     this.el.innerHTML = `<div class="sx"><div class="px"><svg class="belt"></svg><div class="bricks"></div><div class="track"></div></div><div class="nest"></div><div class="lanes"></div></div>`;
@@ -128,7 +144,7 @@ const Snake: Game & Record<string, any> = {
     if (t < 0 || r.sn.n <= 0 || this.g[t] !== r.sn.c) return;
     this.g[t] = null; r.sn.n--; Score.good(3); r.head.querySelector('b')!.textContent = String(r.sn.n);
     if (r.segs.length > 3) r.segs.pop()?.remove();
-    flash(r.head, 'chomp', 180); haptic();
+    flash(r.head, 'chomp', 180); sfx('pop');
     const b = this.el.querySelector(`.bricks [data-i="${t}"]`) as HTMLElement;
     if (b) { const dx = p.x * this.cs - parseFloat(b.style.left), dy = p.y * this.cs - parseFloat(b.style.top); b.animate([{ transform: 'none' }, { transform: `translate(${dx}px,${dy}px) scale(.25)`, opacity: .2 }], { duration: 200, easing: 'ease-in' }).onfinish = () => b.remove(); }
     this.hud();

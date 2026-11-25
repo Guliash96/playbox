@@ -14,14 +14,14 @@ import { Stage, THREE, RoundedBoxGeometry, mat, mesh } from '../core/three';
 import { CrowdMesh, person, animate, labelTexture, numberSprite, setSpriteText, poof, type Person } from '../art/people3d';
 import type { Game } from './registry';
 
-const MAXV = 180, SPEED = 7, HALF = 2.7;
+const MAXV = 180, SPEED = 7, HALF = 2.7, GAP = .9, GW = HALF - GAP / 2;
 type Op = { k: '+' | '-' | 'x' | '/'; v: number };
 interface Pair { ops: [Op, Op]; o: THREE.Group; done?: boolean }
 interface Horde { z: number; n: number; start: number; mesh: CrowdMesh; tag: THREE.Sprite; done?: boolean }
 const apply = (n: number, o: Op) => Math.max(0, Math.round(o.k === '+' ? n + o.v : o.k === '-' ? n - o.v : o.k === 'x' ? n * o.v : n / o.v));
 const label = (o: Op) => (o.k === '+' ? '+' : o.k === '-' ? '−' : o.k === 'x' ? '×' : '÷') + o.v;
 const good = (o: Op) => o.k === '+' || o.k === 'x';
-const spiral = (i: number) => { const a = i * 2.39996, r = .26 * Math.sqrt(i); return [Math.cos(a) * r, Math.sin(a) * r * .85]; };
+const spiral = (i: number, n = 1) => { const sc = Math.min(1, 1.05 / (.26 * Math.sqrt(Math.max(1, Math.min(n, MAXV))))), a = i * 2.39996, r = .26 * Math.sqrt(i) * sc; return [Math.cos(a) * r, Math.sin(a) * r * .85]; };
 const SHIRTS = [0x2f7bff, 0x3d8bff, 0x2a6fe0, 0x4f9bff];
 
 const Crowd: Game & Record<string, any> = {
@@ -72,11 +72,13 @@ const Crowd: Game & Record<string, any> = {
   gate(ops: [Op, Op], z: number) {
     const g = new THREE.Group(), post = mat(0xffffff, { roughness: .4 });
     ops.forEach((o, i) => {
-      const x = i ? HALF / 2 : -HALF / 2, col = good(o) ? '#2f9bff' : '#ff3d5a';
-      const p = new THREE.Mesh(new THREE.PlaneGeometry(HALF - .25, 1.6), new THREE.MeshBasicMaterial({ map: labelTexture(label(o), col), transparent: true, opacity: .82, side: THREE.DoubleSide }));
+      const x = (i ? 1 : -1) * (GAP / 2 + GW / 2), col = good(o) ? '#2f9bff' : '#ff3d5a';
+      const p = new THREE.Mesh(new THREE.PlaneGeometry(GW - .2, 1.6), new THREE.MeshBasicMaterial({ map: labelTexture(label(o), col), transparent: true, opacity: .82, side: THREE.DoubleSide }));
       p.position.set(x, 1.15, 0); g.add(p);
     });
-    for (const x of [-HALF, 0, HALF]) { const m = mesh(new RoundedBoxGeometry(.16, 2.2, .16, 2, .05), post); m.position.set(x, 1.1, 0); g.add(m); }
+    for (const x of [-HALF, -GAP / 2, GAP / 2, HALF]) { const m = mesh(new RoundedBoxGeometry(.16, 2.2, .16, 2, .05), post); m.position.set(x, 1.1, 0); g.add(m); }
+    const wall = mesh(new RoundedBoxGeometry(GAP - .2, 1.2, .5, 2, .08), mat(0xff3d5a)); wall.position.set(0, .6, 0); g.add(wall);
+    const stripe = mesh(new THREE.BoxGeometry(GAP - .18, .2, .52), mat(0xffffff)); stripe.position.set(0, .7, 0); g.add(stripe);
     g.position.z = z; this.st.scene.add(g); return g;
   },
   horde(n: number, z: number): Horde {
@@ -108,13 +110,13 @@ const Crowd: Game & Record<string, any> = {
   bind() {
     const el = this.el; let down = false, sx = 0, bx = 0;
     el.onpointerdown = (e: PointerEvent) => { down = true; sx = e.clientX; bx = this.tx; if (this.state === 'ready') { this.state = 'run'; el.querySelector('.rtip')?.remove(); } };
-    el.onpointermove = (e: PointerEvent) => { if (down) this.tx = Math.max(-HALF + .7, Math.min(HALF - .7, bx + (e.clientX - sx) / el.clientWidth * HALF * 2.6)); };
+    el.onpointermove = (e: PointerEvent) => { if (down) this.tx = Math.max(-HALF + .9, Math.min(HALF - .9, bx + (e.clientX - sx) / el.clientWidth * HALF * 2.6)); };
     el.onpointerup = () => { down = false; };
   },
   render(t: number) {
     const n = Math.min(this.n, MAXV), m: CrowdMesh = this.mine, run = this.state === 'run' || this.state === 'boss';
     m.count = n;
-    for (let i = 0; i < n; i++) { const [x, z] = spiral(i); m.pose(i, Math.max(-HALF + .2, Math.min(HALF - .2, this.x + x)), run ? Math.abs(Math.sin(t * 12 + i * 1.7)) * .12 : 0, z + .8, Math.PI, .9, run ? -.18 : 0); }
+    for (let i = 0; i < n; i++) { const [x, z] = spiral(i, this.n); m.pose(i, Math.max(-HALF + .2, Math.min(HALF - .2, this.x + x)), run ? Math.abs(Math.sin(t * 12 + i * 1.7)) * .12 : 0, z + .8, Math.PI, .9, run ? -.18 : 0); }
     m.commit();
   },
   move(dz: number) {
@@ -129,9 +131,14 @@ const Crowd: Game & Record<string, any> = {
       this.move(SPEED * dt);
       this.x += (this.tx - this.x) * Math.min(1, dt * 10);
       for (const p of this.pairs) if (!p.done && p.o.position.z > 0) {
-        p.done = true; const op = p.ops[this.x < 0 ? 0 : 1], before = this.n; this.n = Math.min(999, apply(this.n, op));
+        p.done = true; const before = this.n, disp = Math.min(this.n, MAXV); let cl = 0, cr = 0;
+        for (let i = 0; i < disp; i++) { const x = this.x + spiral(i, this.n)[0]; if (x < -GAP / 2) cl++; else if (x > GAP / 2) cr++; }
+        const nl = Math.round(this.n * cl / disp), nr = Math.round(this.n * cr / disp);
+        this.n = Math.min(999, (nl ? apply(nl, p.ops[0]) : 0) + (nr ? apply(nr, p.ops[1]) : 0));
         this.pop(this.n > before ? '+' + (this.n - before) : this.n < before ? '−' + (before - this.n) : '0', this.n >= before);
-        haptic(this.n >= before ? 'ok' : 'err'); good(op) ? Score.good(10) : Score.bad();
+        const main = cl >= cr ? p.ops[0] : p.ops[1], clean = Math.max(cl, cr) / disp > .85;
+        haptic(this.n >= before ? 'ok' : 'err'); good(main) && clean ? Score.good(10) : Score.bad();
+        if (disp - cl - cr > 0) this.fx(.6, 0xff3d5a);
         if (this.n <= 0) return this.lose();
       }
       for (const h of this.hordes) if (!h.done && h.z > -1.2) { this.fight = h; this.fightT = 0; }

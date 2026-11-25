@@ -9,6 +9,7 @@ import { Ads } from '../core/ads';
 import { done } from '../core/flow';
 import { coinStack, ensureCoinDefs, COIN_T, COIN_RY } from '../art/coin';
 import { Score } from '../core/score';
+import { sfx } from '../core/sfx';
 import type { Game } from './registry';
 
 const CAP = 10, VH = 112;
@@ -54,7 +55,7 @@ const Coins: Game & Record<string, any> = {
     if (!idx.length) return;
     this.busy = true;
     idx.forEach((i: number) => this.cell(i)?.classList.add('collapse'));
-    haptic('ok'); await sleep(620); if (this.dead) return;
+    sfx('merge'); await sleep(620); if (this.dead) return;
     idx.forEach((i: number) => { this.st[i] = [this.st[i][0] + 1]; this.merges++; Score.good(40); });
     this.fresh = new Map(idx.map((i: number) => [i, 0])); this.draw();
     idx.forEach((i: number) => { const c = this.cell(i); flash(c, 'merge', 800); const t = document.createElement('b'); t.className = 'plus'; t.textContent = 'Злиття!'; c.appendChild(t); });

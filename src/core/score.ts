@@ -1,28 +1,34 @@
-// Points with a combo multiplier: every 3 correct actions in a row raise it (up to ×5), a mistake resets to ×1.
-// At the end of a level the bonus needle can multiply the result ×2/×3/×4 for a rewarded ad.
+// Points with a time-based multiplier: every 8 s without a mistake raises it (×1…×5); a mistake drops it to ×1
+// at once. The multiplier lives only for the current round. The strip also shows the player's total for this game.
+// At the end of a level the bonus needle can multiply the round's points ×2/×3/×4 for a rewarded ad.
 import { $ } from './util';
 import { modal, closeModal, toast } from './ui';
 import { Ads } from './ads';
-import { addPoints } from './net';
+import { addPoints, localTotal } from './net';
 import { t } from './i18n';
 
+const STEP = 8000, MAXM = 5;
+let timer: any = 0;
+
 export const Score = {
-  game: '', pts: 0, streak: 0, mult: 1,
-  begin(game: string) { this.game = game; this.pts = 0; this.streak = 0; this.mult = 1; this.render(); },
-  good(base = 10) {
-    this.streak++; const m = Math.min(5, 1 + Math.floor(this.streak / 3));
-    if (m > this.mult) { this.mult = m; this.bump(); }
-    const g = Math.round(base * this.mult); this.pts += g; this.render(); this.float('+' + g); return g;
+  game: '', pts: 0, mult: 1, since: 0,
+  begin(game: string) { this.game = game; this.pts = 0; this.mult = 1; this.since = performance.now(); this.render(); clearInterval(timer); if (game) timer = setInterval(() => this.tick(), 250); },
+  tick() {
+    const m = Math.min(MAXM, 1 + Math.floor((performance.now() - this.since) / STEP));
+    if (m !== this.mult) { this.mult = m; this.render(); this.bump(); } else this.progress();
   },
-  bad() { if (this.mult > 1) this.float('×1', true); this.streak = 0; this.mult = 1; this.render(); },
+  good(base = 10) { const g = Math.round(base * this.mult); this.pts += g; this.render(); this.float('+' + g); return g; },
+  bad() { if (this.mult > 1) this.float('×1', true); this.mult = 1; this.since = performance.now(); this.render(); },
   add(n: number) { n = Math.round(n); if (n > 0) { this.pts += n; this.render(); } },
-  /** send points without the bonus needle (endless games call it via finishSheet) */
-  commit(extra = 1) { const p = Math.round(this.pts * extra); if (p > 0) addPoints(this.game, p); this.pts = 0; this.streak = 0; this.mult = 1; this.render(); return p; },
+  commit(extra = 1) { const p = Math.round(this.pts * extra); if (p > 0) addPoints(this.game, p); this.pts = 0; this.mult = 1; this.since = performance.now(); this.render(); return p; },
+  stop() { clearInterval(timer); this.game = ''; this.render(); },
   render() {
     const el = $('#scorebar'); if (!el) return;
     if (!this.game) { el.innerHTML = ''; return; }
-    el.innerHTML = `<span class="sp">${t('Очки')} <b>${this.pts.toLocaleString()}</b></span><span class="sm m${this.mult}">×${this.mult}</span>`;
+    el.innerHTML = `<span class="sp">${t('Очки')} <b>${this.pts.toLocaleString()}</b></span><span class="sm m${this.mult}">×${this.mult}<i></i></span><span class="st">Σ ${(localTotal(this.game) + this.pts).toLocaleString()}</span>`;
+    this.progress();
   },
+  progress() { const i = $('#scorebar .sm i') as HTMLElement; if (i) i.style.width = this.mult >= MAXM ? '100%' : ((performance.now() - this.since) % STEP) / STEP * 100 + '%'; },
   bump() { const m = $('#scorebar .sm'); m?.classList.remove('up'); void (m as any)?.offsetWidth; m?.classList.add('up'); },
   float(txt: string, bad = false) {
     const bar = $('#scorebar'); if (!bar) return;

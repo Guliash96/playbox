@@ -5,6 +5,7 @@ import { LANGS, setLang, t, hasLang } from './i18n';
 import { online, nickCheck, nickFree, setNick, myNick, top, profile, localTotal } from './net';
 import { store } from './store';
 import { TG } from './platform';
+import { isMuted, setMuted } from './sfx';
 
 const ERR: Record<string, string> = {
   format: 'Потрібно 6–16 символів без пробілів і спецзнаків', digits: 'Нікнейм не може бути лише з цифр',
@@ -50,7 +51,8 @@ export function onboarding(done: () => void) {
 
 export async function profileSheet() {
   modal(`<h2>${t('Профіль')}</h2><p><b>${esc(myNick() || t('Гравець'))}</b></p><p class="muted" id="pinfo"></p>
-    <div class="btns"><button class="btn" id="pnick">${t('Змінити нікнейм')}</button><button class="btn ghost" id="plang">${t('Мова')}</button></div>`);
+    <div class="btns"><button class="btn" id="pnick">${t('Змінити нікнейм')}</button><button class="btn ghost" id="plang">${t('Мова')}</button><button class="btn ghost" id="psnd">${t(isMuted() ? 'Звук: вимкнено' : 'Звук: увімкнено')}</button></div>`);
+  $('#psnd').onclick = () => { setMuted(!isMuted()); $('#psnd').textContent = t(isMuted() ? 'Звук: вимкнено' : 'Звук: увімкнено'); };
   $('#pnick').onclick = () => nickSheet(); $('#plang').onclick = () => languageSheet(() => location.reload());
   const p = await profile(); if (p && p.renames >= 1 && p.rename_credits < 1) { const i = $('#pinfo'); if (i) i.textContent = t('Наступна зміна нікнейму платна'); }
 }

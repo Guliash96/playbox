@@ -29,7 +29,9 @@ export function setBackButton(show: boolean) {
   try { const tg = TG(); if (tg) show ? tg.BackButton.show() : tg.BackButton.hide(); } catch { }
 }
 
+import { sfx } from './sfx';
 export function haptic(t: 'tap' | 'ok' | 'err' = 'tap') {
+  sfx(t);
   try {
     const tg = TG();
     if (tg) t === 'err' ? tg.HapticFeedback.notificationOccurred('error') : tg.HapticFeedback.impactOccurred(t === 'ok' ? 'medium' : 'light');

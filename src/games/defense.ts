@@ -8,6 +8,7 @@ import { haptic } from '../core/platform';
 import { setStats, setTools, pill, hearts, toast } from '../core/ui';
 import { gameOver } from '../core/flow';
 import { Score } from '../core/score';
+import { sfx } from '../core/sfx';
 import { t } from '../core/i18n';
 import { Stage, THREE, RoundedBoxGeometry, mat, mesh, ease } from '../core/three';
 import { person, animate, setGun, gunMesh, labelTexture, numberSprite, setSpriteText, poof, type Person } from '../art/people3d';
@@ -115,9 +116,14 @@ const Defense: Game & Record<string, any> = {
     g.position.set(LANE, 0, z); this.st.scene.add(g); this.drops.push({ o: g, tier });
     toast(t('Лови зброю: {0}!', t(WEAPONS[tier].n)));
   },
+  flash(s: Person) {
+    if (!this.mf) { this.mf = new THREE.Sprite(new THREE.SpriteMaterial({ color: 0xffe27a, transparent: true, opacity: .9, depthWrite: false })); this.mf.scale.set(.45, .45, 1); this.st.scene.add(this.mf); }
+    const p = new THREE.Vector3(); (s.getObjectByName('gun') || s).getWorldPosition(p); this.mf.position.set(p.x, p.y + .05, p.z - .9); this.mf.visible = true; clearTimeout(this.mft); this.mft = setTimeout(() => { if (this.mf) this.mf.visible = false; }, 45);
+  },
   fire() {
     const w = WEAPONS[this.wpn], shooters = [this.player, ...this.allies];
     if (!this.bmat || this.bmatW !== this.wpn) { this.bmat = new THREE.MeshBasicMaterial({ color: w.col }); this.bmatW = this.wpn; }
+    this.flash(this.player); sfx('shoot');
     shooters.forEach((s: Person, i: number) => {
       if (i > 0 && Math.random() < .45) return;
       for (let k = 0; k < w.shots; k++) {
@@ -137,7 +143,7 @@ const Defense: Game & Record<string, any> = {
   frame(dt: number) {
     const run = this.state === 'run', sc = this.st.scene;
     this.x += (this.tx - this.x) * Math.min(1, dt * 12); this.x = Math.max(XMIN, Math.min(XMAX, this.x));
-    this.player.position.x = this.x; if (run) animate(this.player, dt * .6, .4);
+    const moving = Math.abs(this.tx - this.x) > .06; this.player.position.x = this.x; if (moving) animate(this.player, dt, 1); else { this.player.userData.legs.forEach((l: any) => l.rotation.x *= .8); this.player.position.y = 0; }
     this.allies.forEach((a: Person, i: number) => { const row = Math.floor(i / 2), tx = this.x + ((i % 2) ? 1 : -1) * (.55 + row * .35); a.position.x += (Math.max(XMIN, Math.min(XMAX, tx)) - a.position.x) * Math.min(1, dt * 8); a.position.z += ((.5 + row * .45) - a.position.z) * Math.min(1, dt * 4); });
     for (const d of this.drops) d.o.children[0].rotation.y += dt * 2.5;
     if (!run) return;
