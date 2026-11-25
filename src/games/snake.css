@@ -1,0 +1,25 @@
+#game.th-snake{background:radial-gradient(circle at 50% 30%,#ffe7f1,#ffc2d8 60%,#f59ac0)}
+#game.th-snake::before{content:"";position:absolute;inset:0;z-index:-1;background:conic-gradient(rgba(255,255,255,.18) 25%,transparent 0 50%,rgba(255,255,255,.18) 0 75%,transparent 0) 0 0/40px 40px}
+.sx{display:flex;flex-direction:column;align-items:center;gap:12px}
+.px{position:relative;background:#2b2350;border-radius:18px;border:3px solid #1b1b1f;box-shadow:0 12px 24px rgba(120,30,70,.35)}
+.px::before{content:"";position:absolute;inset:calc(var(--cs) - 4px);border-radius:8px;background:#3b3170;box-shadow:inset 0 2px 8px rgba(0,0,0,.5)}
+.bricks i,.track i{position:absolute;width:var(--cs);height:var(--cs)}
+.bricks i::before{content:"";position:absolute;inset:1px;border-radius:4px;background:linear-gradient(150deg,color-mix(in srgb,var(--c) 55%,#fff),var(--c) 45%,color-mix(in srgb,var(--c) 75%,#000));box-shadow:inset 0 2px 0 rgba(255,255,255,.4),inset 0 -2px 0 rgba(0,0,0,.25)}
+.bricks i.eat::before{transition:transform .22s,opacity .22s;transform:scale(.2);opacity:0}
+.track i.seg{transition:left 42ms linear,top 42ms linear;z-index:2}
+.track i.seg::before{content:"";position:absolute;inset:14%;border-radius:50%;background:var(--c);box-shadow:inset 0 -3px 0 rgba(0,0,0,.25),0 0 0 2px #1b1b1f}
+.track i.head{z-index:3}
+.track i.head::before{inset:2%;background:radial-gradient(circle at 35% 30%,#fff8 0 15%,transparent 16%),var(--c)}
+.track i.head b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:calc(var(--cs)*.5);font-weight:700;color:#fff;-webkit-text-stroke:2px #1b1b1f;paint-order:stroke fill}
+.track i.chomp{transform:scale(1.25)}
+.nest{display:flex;gap:6px;padding:6px 8px;border-radius:16px;background:#8a5a2b;border:3px solid #1b1b1f;box-shadow:inset 0 3px 6px rgba(0,0,0,.35)}
+.nslot{width:44px;height:44px;border-radius:50%;background:#6b4429;box-shadow:inset 0 3px 5px rgba(0,0,0,.45);display:flex}
+.lanes{display:flex;gap:10px}
+.lane{display:flex;flex-direction:column;gap:4px;align-items:center;padding:6px;border-radius:14px;background:rgba(255,255,255,.55);border:2px solid #1b1b1f}
+.coil{position:relative;width:44px;height:44px;border:0;padding:0;background:none;cursor:pointer;flex:none}
+.coil svg{width:100%;height:100%;display:block}
+.coil b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:15px;color:#1b1b1f}
+.coil[disabled]{width:30px;height:30px;opacity:.55;cursor:default}
+.coil[disabled] b{font-size:11px}
+.lane .coil:not([disabled]){animation:wig 1.6s ease-in-out infinite}
+@keyframes wig{50%{transform:rotate(-12deg)}}

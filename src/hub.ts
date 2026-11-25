@@ -28,8 +28,7 @@ export function renderHub() {
       ${card(last, 'feat')}
       <h2 class="sec">Усі ігри</h2>
       <div class="grid">${ready.filter(g => g !== last).map(g => card(g)).join('')}</div>
-      <h2 class="sec">Скоро</h2>
-      <div class="grid">${soon.map(g => card(g)).join('')}</div>
+      ${soon.length ? `<h2 class="sec">Скоро</h2><div class="grid">${soon.map(g => card(g)).join('')}</div>` : ''}
     </div>`;
   $('#noads').onclick = buyNoAds;
   $$('#hub .card').forEach(b => b.onclick = () => {

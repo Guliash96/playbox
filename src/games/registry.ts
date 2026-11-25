@@ -4,6 +4,7 @@ import { busSVG, crowd } from '../art/bus';
 import { sittingCat, catHead } from '../art/cat';
 import { mjFace } from '../art/mahjong';
 import { coinStack } from '../art/coin';
+import { harborScene } from '../art/harbor';
 
 export interface Game {
   title: string;
@@ -37,12 +38,12 @@ export const GAMES: GameInfo[] = [
     art: () => `<rect width="160" height="110" fill="#8a8f98"/><rect y="0" width="160" height="44" fill="#3d4148"/><path d="M0 22h160" stroke="#ffd23f" stroke-width="2" stroke-dasharray="10 8"/><rect y="44" width="160" height="6" fill="#d6d0c4"/>${embed(busSVG('#ff8a1f', 3, ['#2f9bff', null, null]), 20, 2, 140, 60)}${embed(crowd('#2f9bff'), 20, 58, 40, 40)}${embed(crowd('#ff3d7f'), 62, 58, 40, 40)}${embed(crowd('#ff8a1f'), 104, 58, 40, 40)}` },
   { id: 'findcat', name: 'Знайди кота', tag: 'Пошук на малюнку', color: '#c9772f', load: () => import('./findcat'), meta: lvl('fc_lvl'),
     art: () => `<rect width="160" height="110" fill="#f1e2c4"/><rect x="0" y="70" width="160" height="10" fill="#8b5a2b"/>${catHead(62, 56, 16, '#e08a3c')}<rect x="40" y="58" width="44" height="12" rx="2" fill="#c97b4a"/><rect x="92" y="30" width="10" height="40" fill="#4a6fa5"/><rect x="103" y="36" width="9" height="34" fill="#a5463a"/><rect x="113" y="26" width="11" height="44" fill="#d9a441"/><circle cx="20" cy="44" r="14" fill="#5c9a4b"/><rect x="10" y="50" width="20" height="20" fill="#b5651d"/>` },
-  { id: 'cube', name: 'Куб-стрілки', tag: 'Розбери 3D-куб', color: '#18b5c4',
-    art: () => `<rect width="160" height="110" fill="#18b5c4"/><path d="M80 16l36 19v40L80 94 44 75V35z" fill="#fff"/><path d="M80 54l36-19v40L80 94z" fill="#bfeef3"/><path d="M80 54L44 35v40l36 19z" fill="#e8fbfd"/>` },
-  { id: 'snake', name: 'Пікс-змійки', tag: 'Колір до кольору', color: '#ff3d7f',
-    art: () => `<rect width="160" height="110" fill="#ff3d7f"/><path d="M30 80h40V40h40v40h20" fill="none" stroke="#fff" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>` },
-  { id: 'runner', name: 'Сани', tag: 'Нескінченний спуск', color: '#6a8dff',
-    art: () => `<rect width="160" height="110" fill="#6a8dff"/><path d="M0 85Q70 45 160 70V110H0z" fill="#fff"/><path d="M60 62h40l8-8" fill="none" stroke="#1b1b1f" stroke-width="5" stroke-linecap="round"/>` },
-  { id: 'merge', name: 'Гавань', tag: 'Мердж з історією', color: '#e8443a',
-    art: () => `<rect width="160" height="110" fill="#e8443a"/><circle cx="62" cy="55" r="22" fill="#fff"/><circle cx="100" cy="55" r="22" fill="#fff" opacity=".7"/>` },
+  { id: 'cube', name: 'Куб-стрілки', tag: 'Розбери 3D-куб', color: '#18b5c4', load: () => import('./cube'), meta: lvl('cb_lvl'),
+    art: () => `<rect width="160" height="110" fill="#1c3d63"/><path d="M80 14l38 20v42L80 96 42 76V34z" fill="#ffb84a"/><path d="M80 54l38-20v42L80 96z" fill="#4aa8ff"/><path d="M80 54L42 34v42l38 20z" fill="#ff6b9a"/><path d="M80 34l19 10M80 34L61 44M80 54v20M80 74l14-7M99 64l10-5M61 64l-10-5" stroke="#fff" stroke-width="2" opacity=".5"/><path d="M70 30h16l-5-5M100 70l8-12 2 6M58 62l-6 10 6 0" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>` },
+  { id: 'snake', name: 'Пікс-змійки', tag: 'Колір до кольору', color: '#ff3d7f', load: () => import('./snake'), meta: lvl('sn_lvl'),
+    art: () => `<rect width="160" height="110" fill="#2b2350"/>${['..RR.RR..','.RRRRRRR.','.RRRRRRR.','..RRRRR..','...RRR...','....R....'].map((row,r)=>[...row].map((ch,c)=>ch==='R'?`<rect x="${44+c*8}" y="${22+r*8}" width="7" height="7" rx="1.5" fill="${(r+c)%3?'#e8443a':'#ff7ab2'}"/>`:'').join('')).join('')}<path d="M20 96h50" stroke="#3fbf5f" stroke-width="10" stroke-linecap="round"/><circle cx="74" cy="96" r="8" fill="#3fbf5f"/><circle cx="77" cy="94" r="2" fill="#fff"/><circle cx="132" cy="26" r="12" fill="none" stroke="#ffc533" stroke-width="6" stroke-dasharray="50 6"/>` },
+  { id: 'runner', name: 'Сани', tag: 'Нескінченний спуск', color: '#6a8dff', load: () => import('./runner'), meta: () => 'Рекорд ' + store.get('rn_best', 0),
+    art: () => `<rect width="160" height="110" fill="#7ea8ec"/><path d="M0 50l30-22 24 16 28-26 34 24 22-12 22 16v20H0z" fill="#c7d9f5"/><path d="M0 60h160v50H0z" fill="#fff"/><path d="M60 60L20 110M80 60v50M100 60l40 50" stroke="#b8cdee" stroke-width="2"/><path d="M30 66l8-16 8 16z" fill="#3a9460"/><path d="M118 70l10-20 10 20z" fill="#3a9460"/><g transform="translate(80 92)"><rect x="-22" y="-8" width="44" height="8" rx="3" fill="#e8443a"/><rect x="-10" y="-30" width="20" height="24" rx="7" fill="#2f6fd6"/><circle cy="-36" r="8" fill="#f2c9a0"/><path d="M-8 -38a8 8 0 0 1 16 0z" fill="#ff3d7f"/></g>` },
+  { id: 'merge', name: 'Гавань', tag: 'Мердж з історією', color: '#3d8bc9', load: () => import('./merge'), meta: () => 'Розділ ' + ((store.get<any>('mg_state', null)?.ch ?? 0) + 1),
+    art: () => harborScene(3).replace('<svg ', '<svg x="0" y="0" width="160" height="110" ') },
 ];

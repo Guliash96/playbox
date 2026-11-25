@@ -1,0 +1,37 @@
+#game.th-merge{background:linear-gradient(#bfe6ff,#f3e2bf 40%,#e8cf9c)}
+.mg{display:flex;flex-direction:column;align-items:center;gap:8px;width:calc(var(--cs)*7 + 16px);max-width:100%}
+.scene{position:relative;width:100%;height:92px;border-radius:16px;overflow:hidden;border:3px solid #1b1b1f}
+.scene svg,.storypic svg{width:100%;height:100%;display:block}
+.scene .boat{animation:boat 3s ease-in-out infinite alternate}
+@keyframes boat{to{transform:translate(4px,2px)}}
+.chbar{position:absolute;left:8px;right:8px;bottom:6px;height:16px;border-radius:99px;background:rgba(255,255,255,.75);border:2px solid #1b1b1f;overflow:hidden}
+.chbar span{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#ffd23f,#ffb020);transition:width .4s}
+.chbar b{position:relative;display:block;text-align:center;font-size:11px;line-height:12px;color:#1b1b1f}
+.storypic{height:120px;border-radius:14px;overflow:hidden;border:3px solid #1b1b1f;margin-bottom:12px}
+.orders{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;width:100%}
+.order{display:flex;align-items:center;gap:4px;padding:4px;border-radius:14px;background:#fff8ea;border:2px solid #1b1b1f;min-height:52px}
+.order.ready{background:#e8ffd9;box-shadow:0 0 0 2px #3fbf5f}
+.order .who{width:28px;height:28px;flex:none}.order .who svg{width:100%;height:100%}
+.order .need{display:flex;gap:1px;flex:1;min-width:0}
+.order .ni{width:26px;height:26px;border-radius:7px;background:#f1e3c4;display:flex;opacity:.75}
+.order .ni.ok{opacity:1;background:#cdf2b8}
+.order .ni svg{width:100%;height:100%}
+.give{flex:none;min-width:34px;height:34px;border-radius:10px;border:2px solid #1b1b1f;background:#ffd23f;font:600 13px Fredoka;cursor:pointer;padding:0 4px}
+.give[disabled]{background:#e9e2d3;color:#8a8170;cursor:default}
+.mboard{display:grid;gap:2px;padding:6px;border-radius:16px;background:#c9a77a;border:3px solid #1b1b1f;box-shadow:0 10px 20px rgba(90,60,20,.25);touch-action:none}
+.cell{width:var(--cs);height:var(--cs);border:0;padding:0;border-radius:9px;background:#f3e2bf;box-shadow:inset 0 -3px 0 rgba(0,0,0,.08);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
+.cell:nth-child(odd){background:#efd9ae}
+.cell svg{width:92%;height:92%}
+.cell.sel{box-shadow:inset 0 0 0 3px #3d8bff}
+.cell.lift svg{opacity:.25}
+.cell.gen{background:#7fc4ff;box-shadow:inset 0 0 0 3px #1b1b1f}
+.cell.gen small{position:absolute;right:2px;bottom:0;font-size:10px;font-weight:700}
+.cell.gen.pump svg{animation:pump .3s}
+@keyframes pump{50%{transform:scale(1.15)}}
+.cell.spawned svg{animation:spawnI .35s cubic-bezier(.3,1.6,.5,1)}
+@keyframes spawnI{from{transform:scale(.1)}}
+.cell.merged svg{animation:mergeI .45s cubic-bezier(.3,1.6,.5,1)}
+@keyframes mergeI{from{transform:scale(.4) rotate(-20deg);filter:brightness(2)}}
+.mdrag{position:fixed;z-index:60;pointer-events:none;filter:drop-shadow(0 8px 6px rgba(0,0,0,.35))}
+.mdrag svg{width:100%;height:100%}
+.info{font-size:13px;color:#5b4630;text-align:center;min-height:20px;padding:0 6px}
