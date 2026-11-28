@@ -39,10 +39,11 @@ const Snake: Game & Record<string, any> = {
     cancelAnimationFrame(this.raf);
     const L = this.lvl = store.get('sn_lvl', 1); this.dead = false; this.over = false;
     // picture size: 14×14 at level 1, growing to 22×22 and staying there
-    const pic = pixPic(L - 1, Math.min(22, 12 + L * 2)); this.H = pic.length; this.W = pic[0].length;
+    const pic = pixPic(L - 1, Math.min(40, 24 + L * 2)); /* 26×26 at level 1 → 40×40, then stays */ this.H = pic.length; this.W = pic[0].length;
     this.g = pic.flatMap(row => [...row].map(ch => ch === '.' ? null : ch));
     const count: Record<string, number> = {}; this.g.forEach((c: string) => c && (count[c] = (count[c] || 0) + 1));
-    const tot = this.g.filter(Boolean).length, lo = Math.max(5, Math.round(tot / 24)), hi = Math.round(lo * 1.9), all: Sn[] = [];
+    this.jit = this.g.map(() => (Math.random() - .5) * .14);   // tiny shade variation per brick, like a real mosaic
+    const tot = this.g.filter(Boolean).length, lo = Math.max(5, Math.round(tot / 30)), hi = Math.round(lo * 1.9), all: Sn[] = [];
     for (const c in count) { let left = count[c]; while (left > 0) { const n = Math.min(left, lo + R(hi - lo + 1)); all.push({ c, n }); left -= n; } }
     this.lanes = Array.from({ length: L < 4 ? 3 : L < 10 ? 4 : 5 }, () => [] as Sn[]);
     shuffle(all).forEach((s, i) => this.lanes[i % this.lanes.length].push(s));
@@ -55,7 +56,7 @@ const Snake: Game & Record<string, any> = {
     const W = this.W, H = this.H, cs = this.cs = Math.floor(Math.min(this.el.clientWidth - 20, (this.el.clientHeight - 200)) / (W + 2));
     const px = this.el.querySelector('.px'); px.style.cssText = `width:${(W + 2) * cs}px;height:${(H + 2) * cs}px;--cs:${cs}px`;
     this.el.querySelector('.belt').innerHTML = `<rect x="${cs / 2}" y="${cs / 2}" width="${(W + 1) * cs}" height="${(H + 1) * cs}" rx="${cs * .6}" fill="none" stroke="#5a4c9c" stroke-width="${cs * .86}"/><rect x="${cs / 2}" y="${cs / 2}" width="${(W + 1) * cs}" height="${(H + 1) * cs}" rx="${cs * .6}" fill="none" stroke="#fff" stroke-opacity=".18" stroke-width="2" stroke-dasharray="${cs * .3} ${cs * .4}" class="beltdash"/><g transform="translate(${cs / 2} ${(H + 1.5) * cs})"><circle r="${cs * .55}" fill="#ffd23f" stroke="#1b1b1f" stroke-width="2"/><path d="M${-cs * .22} ${cs * .1}a${cs * .25} ${cs * .25} 0 1 1 ${cs * .1} ${cs * .18}" fill="none" stroke="#1b1b1f" stroke-width="2.4" stroke-linecap="round"/><path d="M${-cs * .3} ${cs * .02}l${cs * .08} ${cs * .14} ${cs * .12} -${cs * .08}" fill="none" stroke="#1b1b1f" stroke-width="2.4" stroke-linecap="round"/></g>`;
-    this.el.querySelector('.bricks').innerHTML = this.g.map((c: string, i: number) => c ? `<i data-i="${i}" style="left:${(i % W + 1) * cs}px;top:${(Math.floor(i / W) + 1) * cs}px;--c:${PAL[c]}"></i>` : '').join('');
+    this.el.querySelector('.bricks').innerHTML = this.g.map((c: string, i: number) => c ? `<i data-i="${i}" style="left:${(i % W + 1) * cs}px;top:${(Math.floor(i / W) + 1) * cs}px;--c:${shade(PAL[c], this.jit[i])}"></i>` : '').join('');
     this.P = this.path();
   },
   hud() { setStats(`${pill('Рів. ' + this.lvl)}${pill(this.g.filter(Boolean).length + ' цеглин')}`); },
