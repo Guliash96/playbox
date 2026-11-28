@@ -28,7 +28,7 @@ const SCENES: ((x: Ctx) => void)[] = [
   // flower
   x => { sky(x, 'S', 'G', 74); cloud(x, 62, 16); rect(x, 47, 46, 6, 34, 'D'); ell(x, 38, 64, 12, 5, 'D', -.5); ell(x, 62, 70, 12, 5, 'D', .5); for (let a = 0; a < 6; a++) circ(x, 50 + Math.cos(a * 1.047) * 15, 34 + Math.sin(a * 1.047) * 15, 11, 'P'); circ(x, 50, 34, 10, 'Y'); flowerDot(x, 14, 86, 'R'); flowerDot(x, 84, 90, 'V'); },
   // mushroom
-  x => { sky(x, 'S', 'L', 76); cloud(x, 8, 16, .7); rr(x, 36, 52, 28, 32, 8, 'W'); ell(x, 50, 50, 40, 26, 'R'); rect(x, 8, 50, 84, 8, 'S'); rect(x, 10, 50, 80, 4, 'R'); for (const [a, b, r] of [[34, 38, 7], [60, 32, 6], [72, 46, 5], [22, 47, 4], [48, 26, 4]]) circ(x, a, b, r, 'W'); circ(x, 44, 66, 2.5, 'K'); circ(x, 56, 66, 2.5, 'K'); },
+  x => { sky(x, 'S', 'L', 76); cloud(x, 8, 16, .7); rr(x, 38, 50, 24, 34, 6, 'W'); x.save(); x.beginPath(); x.rect(0, 0, 100, 54); x.clip(); ell(x, 50, 54, 40, 36, 'R'); x.restore(); for (const [a, b, r] of [[34, 36, 7], [60, 30, 6], [74, 44, 5], [24, 46, 4.5], [48, 24, 4]]) circ(x, a, b, r, 'W'); rect(x, 42, 64, 4, 5, 'K'); rect(x, 54, 64, 4, 5, 'K'); },
   // house + sun
   x => { sky(x, 'S', 'G', 76); circ(x, 82, 16, 10, 'Y'); rect(x, 22, 46, 56, 34, 'T'); poly(x, [16, 48, 50, 18, 84, 48], 'R'); rect(x, 44, 58, 14, 22, 'N'); rect(x, 28, 54, 12, 12, 'S'); rect(x, 62, 54, 12, 12, 'S'); rect(x, 66, 22, 8, 16, 'A'); cloud(x, 6, 20, .7); },
   // ice cream
@@ -42,11 +42,11 @@ const SCENES: ((x: Ctx) => void)[] = [
   // chick
   x => { sky(x, 'S', 'G', 74); cloud(x, 64, 14, .8); circ(x, 50, 56, 26, 'Y'); circ(x, 50, 32, 16, 'Y'); ell(x, 28, 60, 10, 6, 'O', .5); circ(x, 44, 30, 3, 'K'); circ(x, 56, 30, 3, 'K'); poly(x, [46, 36, 54, 36, 50, 42], 'O'); poly(x, [44, 16, 50, 8, 52, 18], 'O'); rect(x, 40, 80, 3, 8, 'O'); rect(x, 56, 80, 3, 8, 'O'); flowerDot(x, 12, 88, 'W'); flowerDot(x, 88, 86, 'P'); },
   // penguin
-  x => { rect(x, 0, 0, 100, 100, 'S'); rect(x, 0, 80, 100, 20, 'W'); ell(x, 50, 54, 26, 34, 'K'); ell(x, 50, 60, 18, 26, 'W'); circ(x, 50, 26, 18, 'K'); ell(x, 44, 26, 6, 7, 'W'); ell(x, 56, 26, 6, 7, 'W'); circ(x, 45, 26, 2.5, 'K'); circ(x, 55, 26, 2.5, 'K'); poly(x, [45, 32, 55, 32, 50, 38], 'O'); ell(x, 22, 56, 6, 16, 'K', .3); ell(x, 78, 56, 6, 16, 'K', -.3); ell(x, 40, 88, 8, 4, 'O'); ell(x, 60, 88, 8, 4, 'O'); },
+  x => { rect(x, 0, 0, 100, 100, 'S'); rect(x, 0, 84, 100, 16, 'W'); ell(x, 50, 58, 28, 32, 'K'); circ(x, 50, 28, 20, 'K'); ell(x, 50, 64, 19, 24, 'W'); circ(x, 40, 33, 10, 'W'); circ(x, 60, 33, 10, 'W'); ell(x, 50, 44, 14, 7, 'W'); circ(x, 41, 33, 4.6, 'K'); circ(x, 59, 33, 4.6, 'K'); poly(x, [44, 41, 56, 41, 50, 49], 'O'); ell(x, 21, 60, 6, 18, 'K', .35); ell(x, 79, 60, 6, 18, 'K', -.35); ell(x, 39, 90, 10, 5, 'O'); ell(x, 61, 90, 10, 5, 'O'); },
   // sunset sea
-  x => { rect(x, 0, 0, 100, 34, 'V'); rect(x, 0, 34, 100, 20, 'P'); rect(x, 0, 54, 100, 10, 'O'); circ(x, 50, 62, 18, 'Y'); rect(x, 0, 64, 100, 36, 'B'); for (let k = 0; k < 4; k++) rect(x, 30 + k * 4, 68 + k * 7, 40 - k * 8, 3, 'Y'); poly(x, [70, 86, 90, 86, 86, 92, 74, 92], 'N'); poly(x, [80, 70, 80, 85, 90, 85], 'W'); },
+  x => { rect(x, 0, 0, 100, 30, 'V'); rect(x, 0, 30, 100, 16, 'P'); rect(x, 0, 46, 100, 14, 'O'); circ(x, 50, 60, 20, 'Y'); rect(x, 0, 60, 100, 40, 'B'); for (let k = 0; k < 4; k++) rect(x, 34 + k * 4, 66 + k * 8, 32 - k * 8, 4, 'Y'); cloud(x, 10, 20, .8); cloud(x, 70, 12, .7); },
   // cherry
-  x => { rect(x, 0, 0, 100, 100, 'W'); for (let i = 0; i < 100; i += 20) for (let j = (i / 20) % 2 * 10; j < 100; j += 20) rect(x, i, j, 10, 10, 'Q'); x.strokeStyle = PAL.D; x.lineWidth = 4; x.beginPath(); x.moveTo(34, 66); x.quadraticCurveTo(44, 30, 60, 16); x.moveTo(66, 70); x.quadraticCurveTo(64, 36, 60, 16); x.stroke(); ell(x, 70, 18, 12, 6, 'G', -.3); circ(x, 34, 70, 16, 'M'); circ(x, 66, 72, 16, 'M'); circ(x, 28, 64, 4, 'P'); circ(x, 60, 66, 4, 'P'); },
+  x => { rect(x, 0, 0, 100, 100, 'Q'); x.strokeStyle = PAL.D; x.lineWidth = 5; x.beginPath(); x.moveTo(34, 64); x.quadraticCurveTo(42, 30, 60, 14); x.moveTo(66, 66); x.quadraticCurveTo(64, 34, 60, 14); x.stroke(); ell(x, 72, 18, 14, 7, 'G', -.3); circ(x, 34, 70, 18, 'M'); circ(x, 66, 72, 18, 'M'); circ(x, 27, 63, 5, 'P'); circ(x, 59, 65, 5, 'P'); },
   // frog
   x => { rect(x, 0, 0, 100, 100, 'C'); ell(x, 50, 80, 44, 14, 'D'); ell(x, 50, 58, 32, 24, 'G'); circ(x, 32, 34, 12, 'G'); circ(x, 68, 34, 12, 'G'); circ(x, 32, 34, 7, 'W'); circ(x, 68, 34, 7, 'W'); circ(x, 33, 35, 4, 'K'); circ(x, 67, 35, 4, 'K'); ell(x, 50, 62, 18, 4, 'D'); ell(x, 50, 74, 16, 9, 'L'); circ(x, 34, 58, 3, 'P'); circ(x, 66, 58, 3, 'P'); },
 ];
