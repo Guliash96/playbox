@@ -34,7 +34,7 @@ export function gunMesh(tier: number, mat?: THREE.Material) {
   return g;
 }
 
-export function person(kind: Kind, shirt: THREE.ColorRepresentation, opts: { weapon?: number } = {}) {
+export function person(kind: Kind, shirt: THREE.ColorRepresentation, opts: { weapon?: number; helmet?: number } = {}) {
   const g = new THREE.Group() as Person, z = kind === 'zombie' || kind === 'boss';
   const skin = z ? M(kind === 'boss' ? 0x7fa35a : 0x8fbf6a) : M(SKINS[Math.floor(Math.random() * SKINS.length)]);
   const cloth = M(shirt), pants = M(z ? 0x4b3f63 : kind === 'soldier' ? 0x4f5d3a : 0x2f3b55), shoe = M(0x2b2b31);
@@ -44,12 +44,12 @@ export function person(kind: Kind, shirt: THREE.ColorRepresentation, opts: { wea
     const l = new THREE.Group(); l.position.set(s * .12, .42, 0); g.add(l); add(G.leg, pants, 0, 0, 0, l); add(G.shoe, shoe, 0, -.3, .05, l); legs.push(l);
   }
   const body = add(G.body, cloth, 0, .72) as THREE.Mesh;
-  if (kind === 'soldier') add(G.vest, M(0x5f6b3a), 0, .74);
+  if (kind === 'soldier') add(G.vest, M(opts.helmet ? 0x6b5236 : 0x5f6b3a), 0, .74);
   if (z) { add(new THREE.BoxGeometry(.2, .12, .02), M(0x2b2b31), .08, .62, .25).rotation.z = .3; }      // torn patch
   const head = new THREE.Group(); head.position.y = 1.22; g.add(head);
   add(G.head, skin, 0, 0, 0, head);
   if (kind === 'human') add(G.hair, M(HAIR[Math.floor(Math.random() * HAIR.length)]), 0, .02, -.02, head);
-  if (kind === 'soldier') add(G.helmet, M(0x4f5d3a, { roughness: .5 }), 0, .04, 0, head);
+  if (kind === 'soldier') { add(G.helmet, M(opts.helmet ?? 0x4f5d3a, { roughness: .4 }), 0, .04, 0, head); if (opts.helmet) { const brim = new THREE.Mesh(new THREE.CylinderGeometry(.31, .31, .04, 18), M(new THREE.Color(opts.helmet).multiplyScalar(.75))); brim.position.y = .06; head.add(brim); } }
   const eyeM = z ? M(0xff3030, { emissive: 0xff2020, emissiveIntensity: 1.3 }) : M(0x1b1b1f, { roughness: .3 });
   for (const s of [-1, 1]) { add(G.eye, eyeM, s * .09, .02, .22, head); if (!z) add(G.shine, M(0xffffff, { emissive: 0xffffff }), s * .09 + .015, .04, .26, head); }
   add(G.mouth, M(z ? 0x3a1f1f : 0x8a3a3a), 0, -.1, .23, head).scale.set(z ? 1.6 : 1, z ? 2 : 1, 1);
@@ -87,8 +87,10 @@ function colored(geo: THREE.BufferGeometry, c: THREE.ColorRepresentation) {
 }
 export class CrowdMesh {
   bodies: THREE.InstancedMesh; heads: THREE.InstancedMesh; max: number; private d = new THREE.Object3D(); private c = new THREE.Color();
-  constructor(max: number, scene: THREE.Object3D, kind: 'human' | 'zombie' = 'human') {
+  blob = false;
+  constructor(max: number, scene: THREE.Object3D, kind: 'human' | 'zombie' | 'blob' | 'soldier' = 'human') {
     this.max = max; const z = kind === 'zombie', skin = z ? 0x8fbf6a : 0xf2c9a0;
+    if (kind === 'blob' || kind === 'soldier') { this.alt(kind, scene); return; }
     const bodyGeo = mergeGeometries([
       colored(new THREE.CapsuleGeometry(.25, .26, 4, 10).translate(0, .72, 0), 0xffffff),
       colored(new THREE.CapsuleGeometry(.1, .2, 3, 6).translate(-.12, .3, 0), 0x2f3b55), colored(new THREE.CapsuleGeometry(.1, .2, 3, 6).translate(.12, .3, 0), 0x2f3b55),
@@ -104,9 +106,40 @@ export class CrowdMesh {
     this.heads = new THREE.InstancedMesh(headGeo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .6, emissive: z ? 0x220000 : 0 }), max);
     for (const m of [this.bodies, this.heads]) { m.castShadow = true; m.count = 0; m.frustumCulled = false; scene.add(m); }
   }
+  /** 'blob': glossy one-colour pawn people (bus stop); 'soldier': blue helmet + gun (squads) */
+  private alt(kind: 'blob' | 'soldier', scene: THREE.Object3D) {
+    let bodyGeo: THREE.BufferGeometry, headGeo: THREE.BufferGeometry;
+    if (kind === 'blob') {
+      this.blob = true;
+      bodyGeo = mergeGeometries([colored(new THREE.CapsuleGeometry(.3, .42, 6, 14).translate(0, .55, 0), 0xffffff),
+        colored(new THREE.CapsuleGeometry(.08, .26, 3, 6).rotateZ(.5).translate(-.3, .66, 0), 0xffffff), colored(new THREE.CapsuleGeometry(.08, .26, 3, 6).rotateZ(-.5).translate(.3, .66, 0), 0xffffff)]);
+      headGeo = colored(new THREE.SphereGeometry(.27, 18, 14).translate(0, 1.16, 0), 0xffffff);
+    } else {
+      bodyGeo = mergeGeometries([
+        colored(new THREE.CapsuleGeometry(.27, .24, 4, 10).translate(0, .72, 0), 0xffffff),
+        colored(new THREE.CapsuleGeometry(.28, .1, 4, 10).translate(0, .74, -.02), 0x6b5236),           // ammo belt / vest
+        colored(new THREE.CapsuleGeometry(.1, .2, 3, 6).translate(-.12, .3, 0), 0x2f3b55), colored(new THREE.CapsuleGeometry(.1, .2, 3, 6).translate(.12, .3, 0), 0x2f3b55),
+        colored(new THREE.CapsuleGeometry(.08, .24, 3, 6).rotateX(-1.3).translate(-.24, .88, .18), 0xffffff),
+        colored(new THREE.CapsuleGeometry(.08, .24, 3, 6).rotateX(-1.3).translate(.24, .88, .18), 0xffffff),
+        colored(new THREE.BoxGeometry(.12, .14, .62).translate(.14, .95, .42), 0x2b2b31), colored(new THREE.CylinderGeometry(.04, .04, .3, 8).rotateX(Math.PI / 2).translate(.14, .97, .86), 0x5b6b7a),
+      ]);
+      headGeo = mergeGeometries([
+        colored(new THREE.SphereGeometry(.25, 14, 10).translate(0, 1.2, 0), 0xf2c9a0),
+        colored(new THREE.SphereGeometry(.3, 16, 10, 0, Math.PI * 2, 0, Math.PI * .52).scale(1, .9, 1.05).translate(0, 1.25, 0), 0x2f7bff),
+        colored(new THREE.CylinderGeometry(.33, .33, .04, 16).translate(0, 1.25, .02), 0x1f5fd0),
+        colored(new THREE.SphereGeometry(.04, 8, 6).translate(-.09, 1.2, .22), 0x1b1b1f), colored(new THREE.SphereGeometry(.04, 8, 6).translate(.09, 1.2, .22), 0x1b1b1f),
+      ]);
+    }
+    this.bodies = new THREE.InstancedMesh(bodyGeo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: kind === 'blob' ? .28 : .6, metalness: 0 }), this.max);
+    this.heads = new THREE.InstancedMesh(headGeo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: kind === 'blob' ? .28 : .5 }), this.max);
+    for (const m of [this.bodies, this.heads]) { m.castShadow = true; m.count = 0; m.frustumCulled = false; scene.add(m); }
+  }
   set count(n: number) { this.bodies.count = this.heads.count = Math.min(n, this.max); }
   get count() { return this.bodies.count; }
-  color(i: number, c: THREE.ColorRepresentation) { this.bodies.setColorAt(i, this.c.set(c)); if (this.bodies.instanceColor) this.bodies.instanceColor.needsUpdate = true; }
+  color(i: number, c: THREE.ColorRepresentation) {
+    this.bodies.setColorAt(i, this.c.set(c)); if (this.bodies.instanceColor) this.bodies.instanceColor.needsUpdate = true;
+    if (this.blob) { this.heads.setColorAt(i, this.c); if (this.heads.instanceColor) this.heads.instanceColor.needsUpdate = true; }
+  }
   pose(i: number, x: number, y: number, z: number, ry = 0, s = 1, lean = 0) {
     const d = this.d; d.position.set(x, y, z); d.rotation.set(lean, ry, 0); d.scale.setScalar(s); d.updateMatrix();
     this.bodies.setMatrixAt(i, d.matrix); this.heads.setMatrixAt(i, d.matrix);

@@ -30,8 +30,10 @@ export function setBackButton(show: boolean) {
 }
 
 import { sfx } from './sfx';
+import { store } from './store';
 export function haptic(t: 'tap' | 'ok' | 'err' = 'tap') {
   sfx(t);
+  if (!store.get('vib', true)) return;
   try {
     const tg = TG();
     if (tg) t === 'err' ? tg.HapticFeedback.notificationOccurred('error') : tg.HapticFeedback.impactOccurred(t === 'ok' ? 'medium' : 'light');

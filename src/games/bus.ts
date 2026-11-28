@@ -21,15 +21,27 @@ const OFF: [number, number][] = [[-.28, -.26], [.28, -.26], [-.28, .26], [.28, .
 interface Pp { x: number; z: number; way: [number, number][]; hide?: boolean; ph: number }
 interface Grp { c: number; people: number[] }
 
-function generate(W: number, buses: number, k: number, nc: number) {
+/** Groups are dealt into columns in an order that is known to be solvable with `cap` platform spots.
+ *  `mix` (grows with the level) shuffles that order, so colours get more mixed and wrong taps matter. */
+function generate(W: number, buses: number, k: number, nc: number, mix: number, cap: number) {
   const seq: number[] = []; let prev = -1;
   for (let b = 0; b < buses; b++) { let c; do c = R(nc); while (c === prev && nc > 1); prev = c; seq.push(c); }
-  const order: number[] = []; seq.forEach(c => { for (let j = 0; j < k; j++) order.push(c); });
-  // a few local swaps so the platform has to be used, still solvable with 5 spots
-  for (let i = 0; i < order.length - 2; i++) if (Math.random() < .25) [order[i], order[i + 2]] = [order[i + 2], order[i]];
+  const base: number[] = []; seq.forEach(c => { for (let j = 0; j < k; j++) base.push(c); });
+  // playing the groups in this order: how many platform spots does it need at most?
+  const need = (o: number[]) => {
+    let bi = 0, seats = 0, peak = 0; const hold: number[] = [];
+    const board = () => { for (; ;) { const i = hold.indexOf(seq[bi]); if (bi >= seq.length || i < 0) return; hold.splice(i, 1); if (++seats === k) { bi++; seats = 0; } } };
+    for (const c of o) { if (c === seq[bi]) { if (++seats === k) { bi++; seats = 0; board(); } } else { hold.push(c); peak = Math.max(peak, hold.length); } }
+    return peak;
+  };
+  let order = base.slice();
+  for (let t = 0; t < 60; t++) {
+    const o = base.slice();
+    for (let i = 0; i < o.length - 1; i++) if (Math.random() < .7) { const j = Math.min(o.length - 1, i + 1 + R(mix)); [o[i], o[j]] = [o[j], o[i]]; }
+    const n = need(o); if (n <= cap && n >= need(order)) { order = o; if (n >= cap - 1) break; }
+  }
   const cols: number[][] = Array.from({ length: W }, () => []);
-  // appending in global order keeps every column FIFO-consistent with that order
-  order.forEach(c => cols[R(W)].push(c));
+  order.forEach(c => cols[R(W)].push(c));              // appending in order keeps every column consistent with it
   return { seq, cols };
 }
 
@@ -85,16 +97,16 @@ const Bus: Game & Record<string, any> = {
     const d = Math.max(w / 2 / (half * c.aspect), 7) * .98; c.position.set(0, d * .72, d * .7 - .4); c.lookAt(0, 0, -2.4);
   },
   load() {
-    const sc = this.st.scene; this.dead = false;
+    const sc = this.st.scene; this.dead = false; this.gen = (this.gen || 0) + 1;
     for (const o of this.temp || []) sc.remove(o); this.temp = [];
-    this.crowd?.dispose(sc); this.bus && sc.remove(this.bus);
+    this.crowd?.dispose(sc); this.bus && sc.remove(this.bus); (this.waiting || []).forEach((w: THREE.Object3D) => sc.remove(w)); this.waiting = [];
     const L = this.lvl = store.get('bj_lvl', 1);
     this.W = Math.min(6, 4 + Math.floor(L / 3)); this.k = L < 3 ? 2 : L < 7 ? 3 : 4;
-    const g = generate(this.W, 7 + L, this.k, Math.min(6, 3 + Math.floor(L / 3)));
+    const g = generate(this.W, 7 + L, this.k, Math.min(6, 3 + Math.floor(L / 2)), L < 3 ? 2 : Math.min(12, L + 1), L < 3 ? 3 : L < 6 ? 4 : 5);
     this.buses = g.seq; this.bi = 0; this.seats = 0; this.seated = 0; this.ready = false; this.over = false; this.cont = false; this.cap = HOLD;
     this.hold = [] as ({ g: Grp; here: boolean } | null)[];
     const total = g.cols.reduce((s, c) => s + c.length, 0) * 5;
-    this.crowd = new CrowdMesh(total, sc, 'human'); this.pp = [] as Pp[];
+    this.crowd = new CrowdMesh(total, sc, 'blob'); this.pp = [] as Pp[];
     this.cols = g.cols.map((col, ci) => col.map((c, k) => {
       const people = OFF.map(([ox, oz]) => { const i = this.pp.length; const [x, z] = this.cellPos(ci, k); this.pp.push({ x: x + ox, z: z + oz, way: [], ph: Math.random() * 6 }); this.crowd.color(i, COLS[c]); return i; });
       return { c, people } as Grp;
@@ -104,7 +116,7 @@ const Bus: Game & Record<string, any> = {
     for (let i = 0; i < HOLD + 2; i++) { const s = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.1).rotateX(-Math.PI / 2), this.slotM); s.position.set(this.slotX(i), .19, PLAT + .1); s.visible = i < this.cap; sc.add(s); this.temp.push(s); }
     for (let c = 0; c < this.W; c++) { const l = mesh(new THREE.PlaneGeometry(1.1, 40).rotateX(-Math.PI / 2), mat(0xbfb6a2, { roughness: 1 }), false); l.position.set(this.colX(c), .01, FRONT + 20 - .6); sc.add(l); this.temp.push(l); }
     this.frameCam(); this.arrive(); this.hud();
-    setTools([['Заново', () => { Score.commit(); this.load(); }]]);
+    setTools([['i:restart', () => { Score.lose(); this.load(); }]]);
   },
   colX(c: number) { return (c - (this.W - 1) / 2) * CELL; },
   cellPos(c: number, k: number): [number, number] { return [this.colX(c), FRONT + k * CELL]; },
@@ -116,10 +128,15 @@ const Bus: Game & Record<string, any> = {
   // ---------- buses ----------
   arrive() {
     const sc = this.st.scene, c = this.buses[this.bi]; if (c == null) return;
-    const b = this.bus = busModel(COLS[c], this.k); b.position.set(-16, 0, ROADZ); sc.add(b);
+    // the next buses wait in a line on the road to the left and roll up one by one
+    this.waiting ||= [];
+    const b = this.bus = this.waiting.shift() || busModel(COLS[c], this.k); if (!b.parent) { b.position.set(-16, 0, ROADZ); sc.add(b); }
+    for (let j = this.waiting.length; j < 2; j++) { const nb = this.buses[this.bi + 1 + j]; if (nb == null) break; const w = busModel(COLS[nb], this.k); w.position.set(-30 - j * 6, 0, ROADZ); sc.add(w); this.waiting.push(w); }
+    this.waiting.forEach((w: THREE.Object3D, j: number) => { const x0 = w.position.x, x1 = -10.5 - j * (w.userData.L + .6); this.st.tween(1400, k => { w.position.x = x0 + (x1 - x0) * ease.inOut(k); }); });
     this.tag = numberSprite(`0/${this.k * 5}`, '#1b1b1f', 1.3); this.tag.position.set(0, 2.4, 0); b.add(this.tag);
     this.seats = 0; this.seated = 0; this.ready = false;
-    this.st.tween(1100, k => { b.position.x = -16 + 16 * ease.out(k); }).then(() => { if (this.dead) return; this.ready = true; this.autoBoard(); });
+    const x0 = b.position.x;
+    this.st.tween(1100, k => { b.position.x = x0 - x0 * ease.out(k); }).then(() => { if (this.dead) return; this.ready = true; this.autoBoard(); });
   },
   door() { const b = this.bus; return b ? [b.position.x + b.userData.L / 2 - .55, ROADZ + .85] as [number, number] : [0, ROADZ + .8] as [number, number]; },
   async depart() {
@@ -141,8 +158,16 @@ const Bus: Game & Record<string, any> = {
   boarded() { this.seated++; setSpriteText(this.tag, `${this.seated * 5}/${this.k * 5}`); if (this.seated >= this.k && this.seats >= this.k) this.depart(); },
   // ---------- people ----------
   walkGroup(g: Grp, way: [number, number][], onDone: () => void, hideAtEnd = true) {
-    let left = g.people.length;
-    g.people.forEach((i, j) => { const [ox, oz] = OFF[j]; const p: Pp = this.pp[i]; p.way = way.map(([x, z], n) => [x + ox * (n === way.length - 1 && !hideAtEnd ? 1 : .6), z + oz * .6]); p.hide = false; (p as any).done = () => { if (hideAtEnd) p.hide = true; if (--left === 0) onDone(); }; });
+    let left = g.people.length, fired = false, far = 0; const gen = this.gen;
+    const fin = () => { if (fired || this.gen !== gen) return; fired = true; onDone(); };
+    g.people.forEach((i, j) => {
+      const [ox, oz] = OFF[j]; const p: Pp = this.pp[i];
+      p.way = way.map(([x, z], n) => [x + ox * (n === way.length - 1 && !hideAtEnd ? 1 : .6), z + oz * .6]); p.hide = false;
+      let d = 0, px = p.x, pz = p.z; for (const [x, z] of p.way) { d += Math.hypot(x - px, z - pz); px = x; pz = z; } far = Math.max(far, d);
+      let mine = false; (p as any).done = () => { if (mine) return; mine = true; if (hideAtEnd) p.hide = true; if (--left === 0) fin(); };
+    });
+    // safety net: whatever happens to individual walkers, the group arrives
+    setTimeout(() => { if (fired || this.dead) return; g.people.forEach(i => { const p: Pp = this.pp[i]; const w = p.way[p.way.length - 1]; if (w) { p.x = w[0]; p.z = w[1]; } p.way = []; (p as any).done?.(); (p as any).done = null; }); fin(); }, far / 4.2 * 1000 + 900);
   },
   pointer(e: PointerEvent) {
     if (this.over || this.dead) return;
@@ -177,7 +202,7 @@ const Bus: Game & Record<string, any> = {
     this.over = true; haptic('err');
     const b: any[] = [];
     if (!this.cont) b.push(['Реклама: +1 місце на платформі', () => Ads.rewarded(() => { this.cont = true; this.over = false; this.cap++; this.temp[this.cap - 1].visible = true; })]);
-    b.push(['Почати заново', () => { Score.commit(); this.load(); }]);
+    b.push(['Почати заново', () => { Score.lose(); this.load(); }]);
     setTimeout(() => modal(`<h2>${t('Платформа переповнена')}</h2><p class="muted">${t('Усі місця очікування зайняті.')}</p>`, b), 300);
   },
   frame(dt: number) {
@@ -192,7 +217,7 @@ const Bus: Game & Record<string, any> = {
       }
       if (p.hide) { this.crowd.pose(i, 0, -50, 0, 0, .01); return; }
       const ry = moving ? Math.atan2(p.way[0] ? p.way[0][0] - p.x : 0, p.way[0] ? p.way[0][1] - p.z : 1) : Math.PI;
-      this.crowd.pose(i, p.x, moving ? Math.abs(Math.sin(T * 14 + p.ph)) * .08 : 0, p.z, ry, .58, moving ? .15 : 0);
+      this.crowd.pose(i, p.x, moving ? Math.abs(Math.sin(T * 14 + p.ph)) * .1 : Math.abs(Math.sin(T * 2 + p.ph)) * .02, p.z, ry, .62, moving ? .12 : 0);
     });
     this.crowd.commit();
   },

@@ -85,7 +85,7 @@ const Cube: Game & Record<string, any> = {
       g.scale.setScalar(.01); st.tween(380, k => g.scale.setScalar(.01 + .99 * ease.back(k)), i * 12);
     });
     this.frame(); this.hud();
-    setTools([['Підказка за рекламу', () => Ads.rewarded(() => this.hint())], ['Заново', () => this.load()]]);
+    setTools([['i:hint', () => Ads.rewarded(() => this.hint()), false, '▶'], ['i:restart', () => { Score.lose(); this.load(); }]]);
   },
   frame() {
     const cam = this.st.camera, size = Math.max(...(this.dims || [3, 3, 3])) * 1.5 + .5, half = Math.tan(cam.fov * Math.PI / 360);

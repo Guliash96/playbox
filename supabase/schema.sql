@@ -83,22 +83,64 @@ begin
   return total;
 end $$;
 
+-- high score per game (leaderboards rank this)
+alter table public.scores add column if not exists best bigint not null default 0;
+create index if not exists scores_game_best on public.scores (game, best desc);
+
+create or replace function public.submit_best(g text, v bigint) returns bigint
+language plpgsql security definer set search_path = public as $$
+declare b bigint;
+begin
+  if auth.uid() is null or not exists (select 1 from players where id = auth.uid()) then return null; end if;
+  if v is null or v <= 0 or v > 5000000 or g !~ '^[a-z]{2,16}$' then return null; end if;
+  insert into scores (player_id, game, points, best) values (auth.uid(), g, 0, v)
+  on conflict (player_id, game) do update set best = greatest(scores.best, excluded.best), updated_at = now()
+  returning best into b;
+  return b;
+end $$;
+
 create or replace function public.top_scores(g text, lim int default 50)
 returns table (nick text, points bigint, me boolean)
 language sql stable security definer set search_path = public as $$
-  select p.nick, s.points, s.player_id = auth.uid()
+  select p.nick, s.best, s.player_id = auth.uid()
   from scores s join players p on p.id = s.player_id
-  where s.game = g order by s.points desc, s.updated_at asc limit least(lim, 100);
+  where s.game = g and s.best > 0 order by s.best desc, s.updated_at asc limit least(lim, 100);
 $$;
 
 create or replace function public.my_rank(g text) returns table (rank bigint, points bigint)
 language sql stable security definer set search_path = public as $$
-  select (select count(*) + 1 from scores o where o.game = g and o.points > s.points), s.points
-  from scores s where s.game = g and s.player_id = auth.uid();
+  select (select count(*) + 1 from scores o where o.game = g and o.best > s.best), s.best
+  from scores s where s.game = g and s.player_id = auth.uid() and s.best > 0;
 $$;
 
+-- bug reports from the red triangle button; screenshots go to the private Storage bucket "bugs"
+create table if not exists public.bug_reports (
+  id bigint generated always as identity primary key,
+  player_id uuid default auth.uid(),
+  msg text not null,
+  shot text,
+  meta jsonb,
+  created_at timestamptz not null default now()
+);
+alter table public.bug_reports enable row level security;   -- no policies: only you (dashboard) can read
+
+create or replace function public.report_bug(msg text, shot text, meta jsonb) returns boolean
+language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null then return false; end if;
+  if (select count(*) from bug_reports b where b.player_id = auth.uid() and b.created_at > now() - interval '1 hour') >= 10 then return false; end if;
+  insert into bug_reports (player_id, msg, shot, meta) values (auth.uid(), left(msg, 2000), shot, meta);
+  return true;
+end $$;
+
+insert into storage.buckets (id, name, public) values ('bugs', 'bugs', false) on conflict (id) do nothing;
+drop policy if exists "bug shots upload" on storage.objects;
+create policy "bug shots upload" on storage.objects for insert to authenticated
+  with check (bucket_id = 'bugs' and (storage.foldername(name))[1] = auth.uid()::text);
+
 grant execute on function public.nick_check(text), public.nick_free(text), public.set_nick(text), public.my_profile(),
-  public.add_points(text, int), public.top_scores(text, int), public.my_rank(text) to anon, authenticated;
+  public.add_points(text, int), public.top_scores(text, int), public.my_rank(text),
+  public.submit_best(text, bigint), public.report_bug(text, text, jsonb) to anon, authenticated;
 
 -- starter list of banned fragments (add more any time: insert into bad_words values ('word');)
 insert into public.bad_words (w) values

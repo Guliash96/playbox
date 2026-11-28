@@ -11,6 +11,9 @@ import { onboarding, leaderSheet } from './core/social';
 import { extraTool } from './core/ui';
 import { Score } from './core/score';
 import { flush } from './core/net';
+import { ICON } from './core/ui';
+import { settingsMenu, menuExtra } from './core/settings';
+import { bugReport, consentSheet } from './core/report';
 
 let cur: Game | null = null, seq = 0;
 const home = () => { location.hash = ''; };
@@ -18,7 +21,7 @@ const home = () => { location.hash = ''; };
 async function route() {
   const id = location.hash.slice(1), info = GAMES.find(g => g.id === id && g.load);
   const my = ++seq;
-  closeModal(); cur?.stop?.(); cur = null; if (Score.pts > 0) Score.commit(); Score.stop();
+  closeModal(); cur?.stop?.(); cur = null; if (Score.pts > 0) Score.commit(); Score.stop(); menuExtra.items = []; menuExtra.highlight = false;
   const game = $('#game');
   if (!info) {
     game.hidden = true; game.className = ''; $('#hub').hidden = false; renderHub(); setBackButton(false); return;
@@ -34,9 +37,12 @@ async function route() {
 
 initPlatform(home);
 $('#back').onclick = home;
+$('#bug').innerHTML = ICON.bug; $('#bug').onclick = () => bugReport();
+$('#menu').innerHTML = ICON.menu; $('#menu').onclick = () => settingsMenu();
 addEventListener('hashchange', route);
 renderAdBar();
 startAutoTranslate();
-onboarding(() => route());
+consentSheet(() => onboarding(() => route()));
 addEventListener('online', () => flush()); flush();
 document.addEventListener('nick', () => { if (!location.hash) renderHub(); });
+document.addEventListener('gems', () => { const g = document.querySelector('#gems b'); if (g) g.textContent = String(store.get('gems', 0)); });

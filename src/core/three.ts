@@ -20,7 +20,7 @@ export class Stage {
 
   constructor(el: HTMLElement, opts: { fov?: number; shadows?: boolean; clear?: number | null } = {}) {
     this.el = el;
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: opts.clear == null });
+    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: opts.clear == null, preserveDrawingBuffer: true });
     this.renderer.setPixelRatio(Math.min(2, devicePixelRatio || 1));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping; this.renderer.toneMappingExposure = 1.05;

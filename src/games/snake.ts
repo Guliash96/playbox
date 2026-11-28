@@ -12,30 +12,7 @@ import { Score } from '../core/score';
 import { sfx } from '../core/sfx';
 import type { Game } from './registry';
 
-const PAL: Record<string, string> = { R: '#e8443a', W: '#f5efe2', Y: '#ffc533', K: '#3a3340', P: '#ff7ab2', O: '#ff9a3c', B: '#3d8bff', G: '#3fbf5f', N: '#8a5a2b', C: '#18b5c4', V: '#7b5cff', L: '#9be37a' };
-/** symmetric blob sprite with a dark outline; grows and gets more colours with the level */
-function genPic(L: number): string[] {
-  const W = Math.min(16, 10 + Math.floor((L - 6) / 2)), H = W, k = Math.min(6, 2 + Math.floor((L - 6) / 2));
-  const cols = shuffle(['R', 'Y', 'P', 'O', 'B', 'G', 'C', 'V', 'L']).slice(0, k);
-  for (let t = 0; t < 60; t++) {
-    let m = Array.from({ length: H }, (_, y) => Array.from({ length: W }, (_, x) => { const dx = Math.abs(x - (W - 1) / 2) / (W / 2), dy = Math.abs(y - (H - 1) / 2) / (H / 2); return Math.random() < .9 - (dx * dx + dy * dy) * .75; }));
-    for (let it = 0; it < 3; it++) m = m.map((row, y) => row.map((v, x) => { let n = 0; for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) if ((a || b) && m[y + a]?.[x + b]) n++; return n >= 5 || (v && n >= 4); }));
-    m = m.map(row => row.map((v, x) => x < W / 2 ? v : row[W - 1 - x]));              // mirror
-    const n = m.flat().filter(Boolean).length; if (n < W * H * .45) continue;
-    const edge = (x: number, y: number) => !m[y - 1]?.[x] || !m[y + 1]?.[x] || !m[y]?.[x - 1] || !m[y]?.[x + 1];
-    const cx = (W - 1) / 2, cy = (H - 1) / 2, band = (x: number, y: number) => cols[Math.floor((Math.hypot((x - cx) * 1.2, y - cy) / (W / 2)) * k * .999 + (y > cy ? 1 : 0)) % k];
-    return m.map((row, y) => row.map((v, x) => !v ? '.' : edge(x, y) ? 'K' : band(x, y)).join(''));
-  }
-  return PICS[0];
-}
-const PICS = [
-  ['..........', '.RR....RR.', 'RRRR..RRRR', 'RPRRRRRRRR', 'RRRRRRRRRR', '.RRRRRRRR.', '..RRRRRR..', '...RRRR...', '....RR....', '..........'],
-  ['...RRRR...', '..RRWWRR..', '.RWWRRRRR.', 'RRRRRRWWRR', 'RWWRRRWWRR', 'RRRRRRRRRR', '..YYYYYY..', '..YKYYKY..', '..YYYYYY..', '...YYYY...'],
-  ['O........O', 'OO......OO', 'OOOOOOOOOO', 'OOKOOOOKOO', 'OOKOOOOKOO', 'OOOOPPOOOO', 'WWOOOOOOWW', 'OWWWWWWWWO', '.OOOOOOOO.', '..OOOOOO..'],
-  ['..........', '...BBBB...', '..BBBBBB.Y', '.BKBBBBBYY', 'BBBBYBBBYY', 'BBBBYBBBYY', '.BBBBBBBYY', '..BBBBBB.Y', '...BBBB...', '..........'],
-  ['...PPPP...', '..PPPPPP..', '.PPPYYPPP.', '.PPYYYYPP.', '.PPPYYPPP.', '..PPPPPP..', '...PGGP...', '....GG.GG.', '.GG.GG.G..', '..GGGG....'],
-  ['....RR....', '...RRRR...', '..RRRRRR..', '.RRRRRRRR.', 'RRRRRRRRRR', '.WWWWWWWW.', '.WBBWWBBW.', '.WBBWWBBW.', '.WWWNNWWW.', '.WWWNNWWW.'],
-];
+import { PAL, pixPic } from '../art/pixpics';
 interface Sn { c: string; n: number }
 interface Run { sn: Sn; s: number; segs: HTMLElement[]; head: HTMLElement; next: number }
 const SPEED = 11, GAP = .62, MAXRUN = 4;
@@ -60,17 +37,18 @@ const Snake: Game & Record<string, any> = {
   load() {
     cancelAnimationFrame(this.raf);
     const L = this.lvl = store.get('sn_lvl', 1); this.dead = false; this.over = false;
-    const pic = L <= PICS.length ? PICS[L - 1] : genPic(L); this.H = pic.length; this.W = pic[0].length;
+    // picture size: 14×14 at level 1, growing to 22×22 and staying there
+    const pic = pixPic(L - 1, Math.min(22, 12 + L * 2)); this.H = pic.length; this.W = pic[0].length;
     this.g = pic.flatMap(row => [...row].map(ch => ch === '.' ? null : ch));
     const count: Record<string, number> = {}; this.g.forEach((c: string) => c && (count[c] = (count[c] || 0) + 1));
-    const lo = L < 3 ? 6 : 4, hi = L < 3 ? 14 : 10, all: Sn[] = [];
+    const tot = this.g.filter(Boolean).length, lo = Math.max(5, Math.round(tot / 24)), hi = Math.round(lo * 1.9), all: Sn[] = [];
     for (const c in count) { let left = count[c]; while (left > 0) { const n = Math.min(left, lo + R(hi - lo + 1)); all.push({ c, n }); left -= n; } }
     this.lanes = Array.from({ length: L < 4 ? 3 : L < 10 ? 4 : 5 }, () => [] as Sn[]);
     shuffle(all).forEach((s, i) => this.lanes[i % this.lanes.length].push(s));
     this.cap = L < 6 ? 5 : 4; this.nest = [] as Sn[]; this.cont = false; this.runs = [] as Run[]; this.queue = [] as Sn[];
     this.el.innerHTML = `<div class="sx"><div class="px"><svg class="belt"></svg><div class="bricks"></div><div class="track"></div></div><div class="nest"></div><div class="lanes"></div></div>`;
     this.layout(); this.renderQ(); this.last = 0; this.loop(0);
-    setTools([['Заново', () => this.load()]]);
+    setTools([['i:restart', () => { Score.lose(); this.load(); }]]);
   },
   layout() {
     const W = this.W, H = this.H, cs = this.cs = Math.floor(Math.min(this.el.clientWidth - 20, (this.el.clientHeight - 200)) / (W + 2));
@@ -168,7 +146,7 @@ const Snake: Game & Record<string, any> = {
   fail(s: Sn) {
     const b: any[] = [];
     if (!this.cont) b.push(['Реклама: +1 місце в гнізді', () => Ads.rewarded(() => { this.cont = true; this.over = false; this.cap++; this.nest.push(s); this.renderQ(); })]);
-    b.push(['Почати заново', () => this.load()]);
+    b.push(['Почати заново', () => { Score.lose(); this.load(); }]);
     modal('<h2>Гніздо переповнене</h2><p class="muted">Змійці нікуди повернутися.</p>', b);
   },
 };

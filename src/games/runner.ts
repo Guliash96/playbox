@@ -85,7 +85,7 @@ const Runner: Game & Record<string, any> = {
     st.camera.position.set(0, 3.1, 5.6); st.camera.lookAt(0, .7, -5);
     st.onFrame = (dt: number) => this.frame(dt);
     this.bind(); this.reset(); this.state = 'ready'; this.tip();
-    setTools([['Нова гра', () => { this.reset(); this.state = 'ready'; this.tip(); }]]);
+    setTools([['i:restart', () => { Score.lose(); this.reset(); this.state = 'ready'; this.tip(); }]]);
   },
   stop() { this.st?.dispose(); this.unbind?.(); },
   tip() { this.el.querySelector('.rtip')?.remove(); const t = document.createElement('div'); t.className = 'rtip'; t.innerHTML = '<b>Торкнись, щоб почати</b><br>свайп ← → змінює смугу, ↑ стрибок'; this.el.appendChild(t); },

@@ -40,7 +40,7 @@ const Catdoku: Game & Record<string, any> = {
     this.lvl = store.get('cd_lvl', 1); const n = this.n = Math.min(8, 4 + Math.ceil(this.lvl / 2));
     const g = generate(n); this.sol = g.p; this.reg = g.reg; this.m = Array(n * n).fill(0); this.hp = 3;
     this.fur = shuffle(FURS.slice()); this.draw();
-    setTools([['Підказка за рекламу', () => Ads.rewarded(() => this.hint())], ['Заново', () => this.load()]]);
+    setTools([['i:hint', () => Ads.rewarded(() => this.hint()), false, '▶'], ['i:restart', () => { Score.lose(); this.load(); }]]);
   },
   draw() {
     const n = this.n, rg = this.reg;

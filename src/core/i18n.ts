@@ -10,6 +10,49 @@ export const LANGS = [
 const ORDER = ['uk', 'en', 'ru', 'es', 'pt', 'de', 'fr', 'tr', 'pl'];
 
 const TABLE = `
+Добре!|Good!|Хорошо!|¡Bien!|Boa!|Gut!|Bien !|İyi!|Dobrze!
+Чудово!|Great!|Отлично!|¡Genial!|Ótimo!|Super!|Super !|Harika!|Świetnie!
+Так тримати!|Keep it up!|Так держать!|¡Sigue así!|Continue assim!|Weiter so!|Continue !|Böyle devam!|Tak trzymaj!
+Неймовірно!|Unstoppable!|Невероятно!|¡Imparable!|Imparável!|Unaufhaltsam!|Inarrêtable !|Durdurulamaz!|Niesamowite!
+Новий рекорд!|New high score!|Новый рекорд!|¡Nuevo récord!|Novo recorde!|Neuer Rekord!|Nouveau record !|Yeni rekor!|Nowy rekord!
+За цей захід|This round|За этот заход|Esta ronda|Esta rodada|Diese Runde|Cette manche|Bu tur|Ta runda
+Рекорд|High score|Рекорд|Récord|Recorde|Rekord|Record|Rekor|Rekord
+Налаштування|Settings|Настройки|Ajustes|Configurações|Einstellungen|Réglages|Ayarlar|Ustawienia
+Звук|Sound|Звук|Sonido|Som|Ton|Son|Ses|Dźwięk
+Вібрація|Vibration|Вибрация|Vibración|Vibração|Vibration|Vibration|Titreşim|Wibracje
+Підсвітка доступних|Highlight free tiles|Подсветка доступных|Resaltar fichas libres|Destacar peças livres|Freie Steine hervorheben|Surligner les tuiles libres|Serbest taşları vurgula|Podświetl wolne kafelki
+Закрити|Close|Закрыть|Cerrar|Fechar|Schließen|Fermer|Kapat|Zamknij
+Підказка|Hint|Подсказка|Pista|Dica|Tipp|Indice|İpucu|Podpowiedź
+Повернути|Undo|Вернуть|Deshacer|Desfazer|Rückgängig|Annuler|Geri al|Cofnij
+Закінчилось. Отримай ще:|None left. Get more:|Закончилось. Получи ещё:|No te quedan. Consigue más:|Acabou. Ganhe mais:|Aufgebraucht. Hol dir mehr:|Épuisé. Obtiens-en plus :|Kalmadı. Daha fazla al:|Skończyło się. Zdobądź więcej:
+Реклама: +1|Watch ad: +1|Реклама: +1|Anuncio: +1|Anúncio: +1|Werbung: +1|Pub : +1|Reklam: +1|Reklama: +1
+3 шт. за {0} 💎|3 for {0} 💎|3 шт. за {0} 💎|3 por {0} 💎|3 por {0} 💎|3 für {0} 💎|3 pour {0} 💎|{0} 💎 karşılığı 3 adet|3 szt. za {0} 💎
+У тебе {0} 💎|You have {0} 💎|У тебя {0} 💎|Tienes {0} 💎|Você tem {0} 💎|Du hast {0} 💎|Tu as {0} 💎|{0} 💎 var|Masz {0} 💎
+Досягнення: рівень {0}|Achievement: level {0}|Достижение: уровень {0}|Logro: nivel {0}|Conquista: nível {0}|Erfolg: Level {0}|Succès : niveau {0}|Başarı: seviye {0}|Osiągnięcie: poziom {0}
+Кристали|Crystals|Кристаллы|Cristales|Cristais|Kristalle|Cristaux|Kristaller|Kryształy
+Кристали дають підказки, перемішування та інші бонуси в іграх.|Crystals buy hints, shuffles and other in-game boosts.|Кристаллы дают подсказки, перемешивания и другие бонусы в играх.|Los cristales dan pistas, mezclas y otros bonus.|Cristais dão dicas, embaralhamentos e outros bônus.|Kristalle bringen Tipps, Mischen und andere Boni.|Les cristaux offrent indices, mélanges et autres bonus.|Kristallerle ipucu, karıştırma ve diğer bonusları al.|Kryształy dają podpowiedzi, tasowanie i inne bonusy.
+Реклама: +10 💎 ({0} сьогодні)|Watch ad: +10 💎 ({0} left today)|Реклама: +10 💎 ({0} сегодня)|Anuncio: +10 💎 ({0} hoy)|Anúncio: +10 💎 ({0} hoje)|Werbung: +10 💎 ({0} heute)|Pub : +10 💎 ({0} aujourd'hui)|Reklam: +10 💎 (bugün {0})|Reklama: +10 💎 ({0} dziś)
+Демо: оплата ще не підключена, кристали нараховуються безкоштовно.|Demo: payments are not connected yet, crystals are free.|Демо: оплата ещё не подключена, кристаллы начисляются бесплатно.|Demo: los pagos aún no están conectados, los cristales son gratis.|Demo: pagamentos ainda não conectados, cristais grátis.|Demo: Zahlungen noch nicht verbunden, Kristalle gratis.|Démo : paiements pas encore connectés, cristaux gratuits.|Demo: ödeme henüz bağlı değil, kristaller ücretsiz.|Demo: płatności jeszcze niepodłączone, kryształy za darmo.
+Реклама|Ad|Реклама|Anuncio|Anúncio|Werbung|Pub|Reklam|Reklama
+Покупка (демо)|Purchase (demo)|Покупка (демо)|Compra (demo)|Compra (demo)|Kauf (Demo)|Achat (démo)|Satın alma (demo)|Zakup (demo)
+Повідомити про помилку|Report a bug|Сообщить об ошибке|Informar de un error|Relatar um erro|Fehler melden|Signaler un bug|Hata bildir|Zgłoś błąd
+Додати скріншот|Attach screenshot|Добавить скриншот|Adjuntar captura|Anexar captura|Screenshot anhängen|Joindre une capture|Ekran görüntüsü ekle|Dołącz zrzut ekranu
+Що сталося? Що ти робив перед цим?|What happened? What did you do just before?|Что случилось? Что ты делал перед этим?|¿Qué pasó? ¿Qué hiciste justo antes?|O que aconteceu? O que você fez antes?|Was ist passiert? Was hast du davor gemacht?|Que s'est-il passé ? Qu'as-tu fait juste avant ?|Ne oldu? Hemen önce ne yaptın?|Co się stało? Co robiłeś tuż przed tym?
+Надіслати|Send|Отправить|Enviar|Enviar|Senden|Envoyer|Gönder|Wyślij
+Дякуємо! Звіт надіслано|Thanks! Report sent|Спасибо! Отчёт отправлен|¡Gracias! Informe enviado|Obrigado! Relatório enviado|Danke! Bericht gesendet|Merci ! Rapport envoyé|Teşekkürler! Rapor gönderildi|Dzięki! Zgłoszenie wysłane
+Конфіденційність|Privacy|Конфиденциальность|Privacidad|Privacidade|Datenschutz|Confidentialité|Gizlilik|Prywatność
+Ми зберігаємо прогрес і налаштування на твоєму пристрої та анонімний акаунт для рейтингу. Рекламні партнери можуть використовувати cookies, щоб показувати рекламу.|We keep your progress and settings on your device and an anonymous account for the leaderboards. Ad partners may use cookies to show ads.|Мы храним прогресс и настройки на твоём устройстве и анонимный аккаунт для рейтинга. Рекламные партнёры могут использовать cookies для показа рекламы.|Guardamos tu progreso y ajustes en tu dispositivo y una cuenta anónima para las clasificaciones. Los socios publicitarios pueden usar cookies para mostrar anuncios.|Guardamos seu progresso e configurações no dispositivo e uma conta anônima para os rankings. Parceiros de anúncios podem usar cookies para exibir anúncios.|Wir speichern Fortschritt und Einstellungen auf deinem Gerät und ein anonymes Konto für die Bestenlisten. Werbepartner können Cookies für Anzeigen nutzen.|Nous gardons ta progression et tes réglages sur ton appareil et un compte anonyme pour les classements. Nos partenaires publicitaires peuvent utiliser des cookies.|İlerlemeni ve ayarlarını cihazında, sıralama için anonim bir hesapta tutarız. Reklam ortakları reklam göstermek için çerez kullanabilir.|Przechowujemy postęp i ustawienia na twoim urządzeniu oraz anonimowe konto do rankingu. Partnerzy reklamowi mogą używać plików cookie.
+Політика конфіденційності|Privacy policy|Политика конфиденциальности|Política de privacidad|Política de privacidade|Datenschutzerklärung|Politique de confidentialité|Gizlilik politikası|Polityka prywatności
+Прийняти все|Accept all|Принять все|Aceptar todo|Aceitar tudo|Alle akzeptieren|Tout accepter|Tümünü kabul et|Akceptuj wszystko
+Лише необхідні|Only necessary|Только необходимые|Solo necesarias|Somente necessários|Nur notwendige|Uniquement nécessaires|Yalnızca gerekli|Tylko niezbędne
+Дивись на числа, а не лише на колір воріт: іноді вигідні ворота червоні. Обходь пастки.|Read the numbers, not just the gate colour: sometimes the good gate is red. Dodge the traps.|Смотри на числа, а не только на цвет ворот: иногда выгодные ворота красные. Обходи ловушки.|Mira los números, no solo el color: a veces la puerta buena es roja. Esquiva las trampas.|Olhe os números, não só a cor: às vezes o portão bom é vermelho. Desvie das armadilhas.|Lies die Zahlen, nicht nur die Farbe: Manchmal ist das gute Tor rot. Weiche Fallen aus.|Lis les nombres, pas seulement la couleur : parfois la bonne porte est rouge. Évite les pièges.|Sadece renge değil sayılara bak: bazen iyi kapı kırmızıdır. Tuzaklardan kaç.|Patrz na liczby, nie tylko na kolor: czasem dobra brama jest czerwona. Omijaj pułapki.
+ліворуч зброя, посередині зомбі, праворуч підкріплення|left: weapons, middle: zombies, right: reinforcements|слева оружие, посередине зомби, справа подкрепление|izquierda: armas, centro: zombis, derecha: refuerzos|esquerda: armas, meio: zumbis, direita: reforços|links Waffen, Mitte Zombies, rechts Verstärkung|à gauche les armes, au milieu les zombies, à droite les renforts|solda silahlar, ortada zombiler, sağda takviye|po lewej broń, w środku zombie, po prawej posiłki
+Швидкострільність|Rapid fire|Скорострельность|Disparo rápido|Tiro rápido|Schnellfeuer|Tir rapide|Hızlı ateş|Szybki ogień
+Подвійна шкода|Double damage|Двойной урон|Doble daño|Dano duplo|Doppelter Schaden|Dégâts doublés|Çift hasar|Podwójne obrażenia
+Заморозка|Freeze|Заморозка|Congelación|Congelar|Frost|Gel|Dondurma|Zamrożenie
+Бомба|Bomb|Бомба|Bomba|Bomba|Bombe|Bombe|Bomba|Bomba
++1 серце|+1 heart|+1 сердце|+1 corazón|+1 coração|+1 Herz|+1 cœur|+1 kalp|+1 serce
+−{0} бійців|−{0} soldiers|−{0} бойцов|−{0} soldados|−{0} soldados|−{0} Soldaten|−{0} soldats|−{0} asker|−{0} żołnierzy
 {0} ігор|{0} games|{0} игр|{0} juegos|{0} jogos|{0} Spiele|{0} jeux|{0} oyun|{0} gier
 Без реклами|No ads|Без рекламы|Sin anuncios|Sem anúncios|Werbefrei|Sans pub|Reklamsız|Bez reklam
 Головоломки на хвилинку. Без реєстрації, прогрес зберігається.|Bite-sized puzzles. No sign-up, progress is saved.|Головоломки на минутку. Без регистрации, прогресс сохраняется.|Puzzles rápidos. Sin registro, tu progreso se guarda.|Quebra-cabeças rápidos. Sem cadastro, o progresso é salvo.|Rätsel für zwischendurch. Ohne Anmeldung, Fortschritt wird gespeichert.|Des casse-têtes express. Sans inscription, ta progression est sauvegardée.|Kısa bulmacalar. Kayıt yok, ilerleme kaydedilir.|Szybkie łamigłówki. Bez rejestracji, postęp się zapisuje.
@@ -187,6 +230,8 @@ const TABLE = `
 Ні, вперед!|No, go!|Нет, вперёд!|¡No, adelante!|Não, vamos!|Nein, los!|Non, en avant !|Hayır, ileri!|Nie, naprzód!
 Звук: увімкнено|Sound: on|Звук: включён|Sonido: sí|Som: ligado|Ton: an|Son : activé|Ses: açık|Dźwięk: wł.
 Звук: вимкнено|Sound: off|Звук: выключен|Sonido: no|Som: desligado|Ton: aus|Son : coupé|Ses: kapalı|Dźwięk: wył.
+Увійди через Telegram, щоб мати один акаунт у браузері й у Telegram.|Log in with Telegram to use one account in the browser and in Telegram.|Войди через Telegram, чтобы иметь один аккаунт в браузере и в Telegram.|Entra con Telegram para usar una sola cuenta en el navegador y en Telegram.|Entre com o Telegram para usar uma conta no navegador e no Telegram.|Melde dich mit Telegram an, um ein Konto im Browser und in Telegram zu nutzen.|Connecte-toi avec Telegram pour un seul compte dans le navigateur et Telegram.|Tarayıcıda ve Telegram'da tek hesap için Telegram ile giriş yap.|Zaloguj się przez Telegram, by mieć jedno konto w przeglądarce i w Telegramie.
+Акаунт Telegram підключено|Telegram account connected|Аккаунт Telegram подключён|Cuenta de Telegram conectada|Conta do Telegram conectada|Telegram-Konto verbunden|Compte Telegram connecté|Telegram hesabı bağlandı|Konto Telegram połączone
 Без помилок: множник росте|No mistakes: the multiplier grows|Без ошибок: множитель растёт|Sin errores: el multiplicador sube|Sem erros: o multiplicador sobe|Fehlerfrei: Multiplikator steigt|Sans erreur : le multiplicateur monte|Hatasız: çarpan artar|Bez błędów: mnożnik rośnie
 `;
 

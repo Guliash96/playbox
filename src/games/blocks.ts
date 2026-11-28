@@ -19,6 +19,29 @@ const SHAPES: Cells[] = (() => {
   return out;
 })();
 interface Piece { cells: Cells; col: string }
+const BIG = SHAPES.filter(p => p.length >= 3);
+
+// ---- solver: can all pieces be placed (in any order, lines clear between moves)? ----
+function put(b: boolean[], p: Cells, r: number, c: number): boolean[] | null {
+  for (const [dr, dc] of p) { const y = r + dr, x = c + dc; if (y < 0 || y > 7 || x < 0 || x > 7 || b[y * 8 + x]) return null; }
+  const n = b.slice(); for (const [dr, dc] of p) n[(r + dr) * 8 + c + dc] = true;
+  const rows: number[] = [], cols: number[] = [];
+  for (let k = 0; k < 8; k++) { let rf = true, cf = true; for (let j = 0; j < 8; j++) { if (!n[k * 8 + j]) rf = false; if (!n[j * 8 + k]) cf = false; } if (rf) rows.push(k); if (cf) cols.push(k); }
+  for (const k of rows) for (let j = 0; j < 8; j++) n[k * 8 + j] = false;
+  for (const k of cols) for (let j = 0; j < 8; j++) n[j * 8 + k] = false;
+  return n;
+}
+function solvable(b: boolean[], ps: Cells[]): boolean {
+  if (!ps.length) return true;
+  for (let i = 0; i < ps.length; i++) { const rest = ps.filter((_, j) => j !== i); for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) { const n = put(b, ps[i], r, c); if (n && solvable(n, rest)) return true; } }
+  return false;
+}
+/** how many first moves (piece + spot) still let you place all three; stops counting at cap */
+function goodFirstMoves(b: boolean[], ps: Cells[], cap: number) {
+  let n = 0;
+  for (let i = 0; i < ps.length; i++) { const rest = ps.filter((_, j) => j !== i); for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) { const m = put(b, ps[i], r, c); if (m && solvable(m, rest) && ++n >= cap) return n; } }
+  return n;
+}
 
 const cellHTML = (col: string) => `<i class="f" style="--c:${col}"></i>`;
 function pieceHTML(p: Piece, cs: number, gap: number) {
@@ -28,12 +51,28 @@ function pieceHTML(p: Piece, cs: number, gap: number) {
 
 const Blocks: Game & Record<string, any> = {
   title: 'Блоки', theme: 'th-blocks',
-  start(el: HTMLElement) { this.el = el; this.b = Array(64).fill(0); this.score = 0; this.cont = false; this.best = store.get('bb_best', 0); this.refill(); this.draw(); setTools([['Нова гра', () => this.start(el)]]); },
+  start(el: HTMLElement) { this.el = el; this.deals = 0; this.nextTricky = 0; this.b = Array(64).fill(0); this.score = 0; this.cont = false; this.best = store.get('bb_best', 0); this.refill(); this.draw(); setTools([['i:restart', () => { Score.lose(); this.start(el); }]]); },
   hud() { setStats(`${pill(this.score)}${pill('Рекорд ' + this.best)}`); },
   fits(p: Piece, r: number, c: number) { return p.cells.every(([dr, dc]) => { const y = r + dr, x = c + dc; return y >= 0 && y < 8 && x >= 0 && x < 8 && !this.b[y * 8 + x]; }); },
   anyFit(p: Piece) { for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) if (this.fits(p, r, c)) return true; return false; },
   canMove() { return this.tray.some((p: Piece) => p && this.anyFit(p)); },
-  refill() { for (let t = 0; t < 40; t++) { this.tray = [0, 1, 2].map(() => ({ cells: pick(SHAPES), col: pick(BCOL) })); if (this.canMove()) break; } },
+  /** new 3 pieces. Normally all three can be placed (in some order). Every 4–5 deals a tricky set:
+   *  it still fits, but only one or two first moves lead anywhere, so a careless move loses. */
+  refill() {
+    this.deals = (this.deals || 0) + 1;
+    const tricky = this.deals > 2 && this.deals >= (this.nextTricky ||= 4 + Math.floor(Math.random() * 2));
+    const t0 = performance.now(); let best: Piece[] | null = null, bestN = 1e9, fallback: Piece[] | null = null;
+    for (let t = 0; t < 400 && performance.now() - t0 < (tricky ? 140 : 60); t++) {
+      const set = [0, 1, 2].map(() => ({ cells: tricky ? pick(BIG) : pick(SHAPES), col: pick(BCOL) }));
+      if (!fallback && set.some(p => this.anyFit(p))) fallback = set;
+      const n = goodFirstMoves(this.b.map(Boolean), set.map(p => p.cells), tricky ? 4 : 1);
+      if (!n) continue;
+      if (!tricky) { best = set; break; }
+      if (n < bestN) { best = set; bestN = n; if (n <= 2) break; }
+    }
+    if (tricky && best) this.nextTricky = this.deals + 4 + Math.floor(Math.random() * 2);
+    this.tray = best || fallback || [0, 1, 2].map(() => ({ cells: [[0, 0]] as Cells, col: pick(BCOL) }));
+  },
   draw() {
     this.el.innerHTML = `<div class="bb"><div class="board">${this.b.map((v: string) => v ? cellHTML(v) : '<i></i>').join('')}</div><div class="tray">${this.tray.map((p: Piece, i: number) => `<div class="slot" data-i="${i}">${p ? pieceHTML(p, 17, 2) : ''}</div>`).join('')}</div></div>`;
     this.hud();

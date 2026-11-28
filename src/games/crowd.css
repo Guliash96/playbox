@@ -1,4 +1,4 @@
-#game.th-crowd{background:linear-gradient(#6fbaf2,#9fd6ff)}
+#game.th-crowd{background:linear-gradient(#f6a8e6,#ffc9f2)}
 #game.th-crowd .bar h1{color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.3)}
 #game.th-crowd #stage{padding:0}
 .cnum{position:absolute;left:0;top:0;z-index:3;min-width:44px;padding:2px 10px;border-radius:99px;background:#2f7bff;color:#fff;border:3px solid #1b1b1f;font-size:20px;font-weight:700;text-align:center;pointer-events:none}

@@ -52,8 +52,9 @@ const Parking: Game & Record<string, any> = {
     el.onpointerup = (e: PointerEvent) => { const h = st.pick(e, this.cars.filter((c: Car) => !c.gone).map((c: Car) => c.obj!)); if (h) { let o: any = h.object; while (o && o.userData.car == null) o = o.parent; if (o) this.tap(this.cars[o.userData.car]); } };
     this.load();
   },
-  stop() { this.st?.dispose(); },
+  stop() { this.dead = true; this.st?.dispose(); },
   load() {
+    this.gen = (this.gen || 0) + 1; this.driving = 0; this.dead = false;
     const st: Stage = this.st;
     if (this.world) st.scene.remove(this.world);
     this.lvl = store.get('pk_lvl', 1); const n = this.n = Math.min(9, 5 + Math.floor(this.lvl / 2)); this.hp = 3;
@@ -90,7 +91,7 @@ const Parking: Game & Record<string, any> = {
       o.scale.setScalar(.01); st.tween(350, k => o.scale.setScalar(.01 + .99 * ease.back(k)), c.id * 18);
     }
     this.frame(); this.hud();
-    setTools([['Підказка за рекламу', () => Ads.rewarded(() => this.hint())], ['Заново', () => this.load()]]);
+    setTools([['i:hint', () => Ads.rewarded(() => this.hint()), false, '▶'], ['i:restart', () => { Score.lose(); this.load(); }]]);
   },
   frame() {
     const st: Stage = this.st, cam = st.camera, n = this.n || 6, half = Math.tan(cam.fov * Math.PI / 360);
@@ -106,9 +107,14 @@ const Parking: Game & Record<string, any> = {
     const dir = new THREE.Vector3(dc, 0, dr);
     c.busy = true;
     if (!blocker) {
-      c.gone = true; sfx('whoosh'); Score.good(10);
-      this.drive(o, this.exitPath(o.position.clone(), c.d));
-      if (this.cars.every((k: Car) => k.gone)) done('pk_lvl', this.lvl, () => this.load());
+      c.gone = true; sfx('whoosh'); this.driving = (this.driving || 0) + 1;
+      const gen = this.gen;
+      // points are counted when the car is almost at the end of the exit road
+      this.drive(o, this.exitPath(o.position.clone(), c.d), () => {
+        if (this.gen !== gen || this.dead) return;
+        Score.good(10); sfx('coin'); this.driving--;
+        if (!this.driving && this.cars.every((k: Car) => k.gone)) done('pk_lvl', this.lvl, () => this.load());
+      });
       return;
     }
     const go = dist + .1, t = 140 + dist * 70;
@@ -130,12 +136,14 @@ const Parking: Game & Record<string, any> = {
     pts.push(...route[side], v(R + 16, -R));
     return pts;
   },
-  drive(o: THREE.Object3D, pts: THREE.Vector3[]) {
+  drive(o: THREE.Object3D, pts: THREE.Vector3[], near?: () => void) {
     const segs = pts.slice(1).map((q, i) => ({ a: pts[i], b: q, l: pts[i].distanceTo(q) })), total = segs.reduce((s, x) => s + x.l, 0);
+    const nearAt = (total - 16 + 2) / total; let fired = false;
     this.st.tween(500 + total * 90, k => {
+      if (!fired && k * (k < .2 ? k / .2 : 1) >= nearAt) { fired = true; near?.(); }
       let s = Math.min(total, k * total * (k < .2 ? k / .2 : 1));
       for (const g of segs) { if (s <= g.l || g === segs[segs.length - 1]) { const f = g.l ? Math.min(1, s / g.l) : 1; o.position.lerpVectors(g.a, g.b, f); const dx = g.b.x - g.a.x, dz = g.b.z - g.a.z; if (dx || dz) { const want = Math.atan2(-dz, dx); let dr = want - o.rotation.y; while (dr > Math.PI) dr -= 2 * Math.PI; while (dr < -Math.PI) dr += 2 * Math.PI; o.rotation.y += dr * .35; } break; } s -= g.l; }
-    }).then(() => this.world.remove(o));
+    }).then(() => { if (!fired) near?.(); this.world.remove(o); });
   },
   hint() {
     const c = this.cars.find((k: Car) => !k.gone && !this.ahead(k).blocker); if (!c) return;

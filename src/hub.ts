@@ -5,6 +5,9 @@ import { buyNoAds } from './core/ads';
 import { GAMES } from './games/registry';
 import { myNick } from './core/net';
 import { profileSheet } from './core/social';
+import { ICON } from './core/ui';
+import { gems, shopSheet } from './core/wallet';
+import { bugReport } from './core/report';
 const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 
 import { ensureCoinDefs } from './art/coin';
@@ -22,9 +25,9 @@ export function renderHub() {
   $('#hub').innerHTML = `
     <div class="hero">
       <div class="rays" aria-hidden="true"></div>
-      <div class="hero-top"><button id="prof" class="chip">${myNick() ? esc(myNick()) : 'Профіль'}</button><button id="noads" class="btn ghost sm">Без реклами</button></div>
+      <div class="hero-top"><button id="prof" class="chip">${myNick() ? esc(myNick()) : 'Профіль'}</button><span class="hero-r"><button id="gems" class="chip gemchip">${ICON.gem}<b>${gems()}</b></button><button id="hbug" class="ibtn sq bugb" aria-label="Повідомити про помилку">${ICON.bug}</button></span></div>
       <h1 class="logo" aria-label="PlayBox"><span>Play</span><span>Box</span></h1>
-      <p class="sub">Головоломки на хвилинку. Без реєстрації, прогрес зберігається.</p>
+      <p class="sub">Головоломки на хвилинку. Без реєстрації, прогрес зберігається.</p><button id="noads" class="btn ghost sm noadsb">Без реклами</button>
     </div>
     <div class="shelf">
       <h2 class="sec">Продовжити</h2>
@@ -33,7 +36,7 @@ export function renderHub() {
       <div class="grid">${ready.filter(g => g !== last).map(g => card(g)).join('')}</div>
       ${soon.length ? `<h2 class="sec">Скоро</h2><div class="grid">${soon.map(g => card(g)).join('')}</div>` : ''}
     </div>`;
-  $('#noads').onclick = buyNoAds; $('#prof').onclick = () => profileSheet();
+  $('#noads').onclick = buyNoAds; $('#gems').onclick = () => shopSheet(); $('#hbug').onclick = () => bugReport(); $('#prof').onclick = () => profileSheet();
   $$('#hub .card').forEach(b => b.onclick = () => {
     const g = GAMES.find(x => x.id === b.dataset.id)!;
     g.load ? (location.hash = g.id) : toast(`«${g.name}» ще в роботі`);

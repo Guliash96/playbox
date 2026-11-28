@@ -45,7 +45,7 @@ const FindCat: Game & Record<string, any> = {
     const L = this.lvl = store.get('fc_lvl', 1);
     this.k = Math.min(12, 3 + L); this.cr = Math.max(7.5, 12.5 - L * .5); this.found = 0;
     this.build(); this.draw();
-    setTools([['Підказка за рекламу', () => Ads.rewarded(() => this.hint())], ['Нова сцена', () => this.load()]]);
+    setTools([['i:hint', () => Ads.rewarded(() => this.hint()), false, '▶'], ['i:restart', () => { Score.lose(); this.load(); }]]);
   },
   build() {
     const cr = this.cr, items: It[] = [], shelves = Array.from({ length: NSH }, (_, i) => SHELF0 + i * STEP);
@@ -59,18 +59,28 @@ const FindCat: Game & Record<string, any> = {
       <rect x="0" y="0" width="12" height="${VH}" fill="#7a5038"/><rect x="${VW - 12}" y="0" width="12" height="${VH}" fill="#7a5038"/>
       <rect x="12" y="18" width="${VW - 24}" height="40" fill="#000" opacity=".15"/>`;
     s += shelves.map(y => `<rect x="10" y="${y}" width="${VW - 20}" height="10" fill="#8b5a2b"/><rect x="10" y="${y}" width="${VW - 20}" height="3" fill="#a8743f"/><rect x="10" y="${y + 10}" width="${VW - 20}" height="8" fill="#000" opacity=".22"/>`).join('');
-    for (const it of items) {
-      if (catIt.has(it)) {
+    // a cat may not sit next to another cat, and a side cat may not be covered by the next item
+    const placed: [number, number][] = [];
+    const spot = (it: It, i: number): [number, number, boolean] | null => {
+      const nxt = items[i + 1], rightOk = !nxt || nxt.y !== it.y || nxt.x - (it.x + it.w) > cr * 1.3;
+      const opts: [number, number, boolean][] = [[it.x + it.w / 2 + (Math.random() - .5) * it.w * .3, it.y - Math.min(it.h, 30) - cr * .2, false], [it.x + 1, it.y - cr * .95, true]];
+      if (rightOk) opts.push([it.x + it.w - 1, it.y - cr * .95, true]);
+      for (const o of Math.random() < .35 ? opts.slice(1).concat(opts[0]) : opts) if (placed.every(([px, py]) => Math.hypot(px - o[0], py - o[1]) > cr * 3)) return o;
+      return null;
+    };
+    let need = this.k;
+    items.forEach((it, i) => { if (!need) return; if (catIt.has(it)) { const sp = spot(it, i); if (sp) { placed.push([sp[0], sp[1]]); (it as any).cat = sp; need--; } } });
+    if (need) for (let i = 0; i < items.length && need; i++) { const it = items[i]; if ((it as any).cat || it.w < cr * 1.8 || it.t === 'yarn') continue; const sp = spot(it, i); if (sp) { placed.push([sp[0], sp[1]]); (it as any).cat = sp; need--; } }
+    items.forEach((it, i) => {
+      if ((it as any).cat) {
         it.h = Math.min(it.h, 30);
-        const side = Math.random() < .35, left = Math.random() < .5;
-        const x = side ? it.x + (left ? 1 : it.w - 1) : it.x + it.w / 2 + (Math.random() - .5) * it.w * .4;
-        const y = side ? it.y - cr * .95 : it.y - it.h - cr * .2, fur = pick(FUR), id = this.cats.length;
+        const [x, y, side] = (it as any).cat as [number, number, boolean], fur = pick(FUR), id = this.cats.length;
         this.cats.push({ x, y, r: cr, f: false });
         s += `<g class="cwrap" id="cat${id}">${catHead(x, y, cr, fur, Math.random() * 5)}</g>`;
         if (!side && Math.random() < .55) { const dir = Math.random() < .5 ? 1 : -1; s += catTail(dir > 0 ? it.x + it.w - 3 : it.x + 3, it.y - it.h * .35, cr, fur, dir as 1 | -1, Math.random() * 2); }
       }
       s += drawItem(it);
-    }
+    });
     s += `<rect x="0" y="${VH - 18}" width="${VW}" height="18" fill="#5a3a22"/>`;
     this.scene = s;
   },

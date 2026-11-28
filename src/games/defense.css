@@ -1,5 +1,11 @@
-#game.th-defense{background:linear-gradient(#6f8a76,#9fb3a0)}
+#game.th-defense{background:linear-gradient(#5fb8ef,#8fd0ff)}
 #game.th-defense .bar h1{color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.3)}
 #game.th-defense #stage{padding:0}
-#game.th-defense #stage.hurt::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 80px rgba(255,0,0,.7);animation:hurt .5s forwards;pointer-events:none}
+#game.th-defense #stage.hurt::after,#game.th-defense #stage.boom::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 80px rgba(255,0,0,.7);animation:hurt .5s forwards;pointer-events:none;z-index:3}
+#game.th-defense #stage.boom::after{box-shadow:none;background:rgba(255,190,80,.55)}
 @keyframes hurt{to{opacity:0}}
+.buffs{position:absolute;left:10px;top:8px;z-index:4;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.buffs span{background:var(--c);border:2px solid #1b1b1f;border-radius:99px;padding:2px 10px;font-weight:700;font-size:15px;color:#1b1b1f;box-shadow:0 2px 0 #1b1b1f}
+.bossbar{position:absolute;left:50%;top:8px;transform:translateX(-50%);z-index:4;width:62%;height:22px;border-radius:99px;background:#2b1b24;border:3px solid #1b1b1f;overflow:hidden;pointer-events:none}
+.bossbar i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(#ff7a5a,#e8324a);transition:width .15s}
+.bossbar b{position:absolute;inset:0;z-index:1;text-align:center;color:#fff;font-size:16px;line-height:16px;-webkit-text-stroke:3px #1b1b1f;paint-order:stroke fill}

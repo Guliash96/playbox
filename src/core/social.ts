@@ -2,7 +2,7 @@
 import { $, $$ } from './util';
 import { modal, closeModal, toast } from './ui';
 import { LANGS, setLang, t, hasLang } from './i18n';
-import { online, nickCheck, nickFree, setNick, myNick, top, profile, localTotal } from './net';
+import { online, nickCheck, nickFree, setNick, myNick, top, profile, localTotal, loginWithTelegram, tgLinked, TELEGRAM_BOT } from './net';
 import { store } from './store';
 import { TG } from './platform';
 import { isMuted, setMuted } from './sfx';
@@ -54,6 +54,15 @@ export async function profileSheet() {
     <div class="btns"><button class="btn" id="pnick">${t('Змінити нікнейм')}</button><button class="btn ghost" id="plang">${t('Мова')}</button><button class="btn ghost" id="psnd">${t(isMuted() ? 'Звук: вимкнено' : 'Звук: увімкнено')}</button></div>`);
   $('#psnd').onclick = () => { setMuted(!isMuted()); $('#psnd').textContent = t(isMuted() ? 'Звук: вимкнено' : 'Звук: увімкнено'); };
   $('#pnick').onclick = () => nickSheet(); $('#plang').onclick = () => languageSheet(() => location.reload());
+  if (online && !TG() && !tgLinked()) {
+    // Telegram Login Widget: same account as in the Telegram app (domain must be set in @BotFather → /setdomain)
+    const box = document.createElement('div'); box.className = 'tglogin'; box.innerHTML = `<p class="muted">${t('Увійди через Telegram, щоб мати один акаунт у браузері й у Telegram.')}</p>`;
+    $('#pinfo').after(box);
+    (window as any).onTelegramAuth = async (u: Record<string, string>) => { const ok = await loginWithTelegram(u); toast(t(ok ? 'Акаунт Telegram підключено' : 'Немає зв\'язку з сервером')); if (ok) profileSheet(); };
+    const sc = document.createElement('script'); sc.async = true; sc.src = 'https://telegram.org/js/telegram-widget.js?22';
+    sc.setAttribute('data-telegram-login', TELEGRAM_BOT); sc.setAttribute('data-size', 'large'); sc.setAttribute('data-radius', '12'); sc.setAttribute('data-onauth', 'onTelegramAuth(user)');
+    box.appendChild(sc);
+  } else if (tgLinked()) { const i = $('#pinfo'); if (i) i.textContent = t('Акаунт Telegram підключено'); }
   const p = await profile(); if (p && p.renames >= 1 && p.rename_credits < 1) { const i = $('#pinfo'); if (i) i.textContent = t('Наступна зміна нікнейму платна'); }
 }
 

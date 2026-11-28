@@ -26,7 +26,7 @@ const Coins: Game & Record<string, any> = {
     this.merges = 0; this.sel = -1; this.cont = false; this.busy = false; this.dead = false;
     this.st = Array.from({ length: this.ns }, () => []);
     this.deal(); this.deal(); this.draw();
-    setTools([['Роздати', () => this.dealBtn(), true], ['Заново', () => this.load()]]);
+    setTools([['Роздати', () => this.dealBtn(), true], ['i:restart', () => { Score.lose(); this.load(); }]]);
   },
   free() { return this.st.reduce((s: number, x: number[]) => s + CAP - x.length, 0); },
   deal() {
@@ -108,7 +108,7 @@ const Coins: Game & Record<string, any> = {
   over() {
     const b: any[] = [];
     if (!this.cont) b.push(['Реклама: звільнити відсік', () => Ads.rewarded(() => { this.cont = true; let w = 0; this.st.forEach((s: number[], i: number) => { if (new Set(s).size > new Set(this.st[w]).size) w = i; }); this.st[w] = []; this.draw(); })]);
-    b.push(['Почати заново', () => this.load()]);
+    b.push(['Почати заново', () => { Score.lose(); this.load(); }]);
     modal('<h2>Каса переповнена</h2><p class="muted">Для нової роздачі не вистачає місця.</p>', b);
   },
 };

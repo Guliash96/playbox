@@ -1,31 +1,48 @@
-// Points with a time-based multiplier: every 8 s without a mistake raises it (×1…×5); a mistake drops it to ×1
-// at once. The multiplier lives only for the current round. The strip also shows the player's total for this game.
-// At the end of a level the bonus needle can multiply the round's points ×2/×3/×4 for a rewarded ad.
+// Score strip: [current points] [this round] [×multiplier] [🏆 high score].
+// Current points add up level after level and drop to 0 when you lose (Score.lose) or leave the game.
+// The multiplier grows every 8 s without a mistake (×1…×5) and drops to ×1 at once on a mistake.
+// Beating the high score shows a "New high score!" banner once per run. Leaderboards rank high scores.
 import { $ } from './util';
 import { modal, closeModal, toast } from './ui';
 import { Ads } from './ads';
-import { addPoints, localTotal } from './net';
+import { addPoints, submitBest, localBest } from './net';
 import { t } from './i18n';
+import { sfx } from './sfx';
 
 const STEP = 8000, MAXM = 5;
+const CHEER = ['', '', 'Добре!', 'Чудово!', 'Так тримати!', 'Неймовірно!'];
 let timer: any = 0;
 
 export const Score = {
-  game: '', pts: 0, mult: 1, since: 0,
-  begin(game: string) { this.game = game; this.pts = 0; this.mult = 1; this.since = performance.now(); this.render(); clearInterval(timer); if (game) timer = setInterval(() => this.tick(), 250); },
+  game: '', pts: 0, run: 0, best: 0, mult: 1, since: 0, hsShown: false,
+  begin(game: string) {
+    this.game = game; this.pts = 0; this.run = 0; this.mult = 1; this.hsShown = false; this.since = performance.now();
+    this.best = game ? localBest(game) : 0; this.hsShown = this.best === 0; this.render(); clearInterval(timer); if (game) timer = setInterval(() => this.tick(), 250);
+  },
   tick() {
     const m = Math.min(MAXM, 1 + Math.floor((performance.now() - this.since) / STEP));
-    if (m !== this.mult) { this.mult = m; this.render(); this.bump(); } else this.progress();
+    if (m !== this.mult) { this.mult = m; this.render(); this.bump(); if (m >= 2) cheer(t(CHEER[m])); } else this.progress();
   },
-  good(base = 10) { const g = Math.round(base * this.mult); this.pts += g; this.render(); this.float('+' + g); return g; },
+  good(base = 10) { const g = Math.round(base * this.mult); this.pts += g; this.check(); this.render(); this.float('+' + g); return g; },
   bad() { if (this.mult > 1) this.float('×1', true); this.mult = 1; this.since = performance.now(); this.render(); },
-  add(n: number) { n = Math.round(n); if (n > 0) { this.pts += n; this.render(); } },
-  commit(extra = 1) { const p = Math.round(this.pts * extra); if (p > 0) addPoints(this.game, p); this.pts = 0; this.mult = 1; this.since = performance.now(); this.render(); return p; },
+  add(n: number) { n = Math.round(n); if (n > 0) { this.pts += n; this.check(); this.render(); } },
+  /** round finished: its points (× bonus) move into the current total */
+  commit(extra = 1) {
+    const p = Math.round(this.pts * extra); if (p > 0) { addPoints(this.game, p); this.run += p; }
+    this.pts = 0; this.mult = 1; this.since = performance.now(); this.check(); this.render(); return p;
+  },
+  /** the run is over (lost / restarted): current points back to 0 */
+  lose() { this.commit(); this.run = 0; this.hsShown = this.best === 0; this.render(); },
+  check() {
+    const cur = this.run + this.pts; if (!this.game || cur <= this.best) return;
+    this.best = cur; submitBest(this.game, cur);
+    if (!this.hsShown && cur > 0) { this.hsShown = true; banner(t('Новий рекорд!')); sfx('win'); }
+  },
   stop() { clearInterval(timer); this.game = ''; this.render(); },
   render() {
     const el = $('#scorebar'); if (!el) return;
     if (!this.game) { el.innerHTML = ''; return; }
-    el.innerHTML = `<span class="sp">${t('Очки')} <b>${this.pts.toLocaleString()}</b></span><span class="sm m${this.mult}">×${this.mult}<i></i></span><span class="st">Σ ${(localTotal(this.game) + this.pts).toLocaleString()}</span>`;
+    el.innerHTML = `<span class="sp" title="${t('Очки')}"><b>${(this.run + this.pts).toLocaleString()}</b></span><span class="sr" title="${t('За цей захід')}">+${this.pts.toLocaleString()}</span><span class="sm m${this.mult}">×${this.mult}<i></i></span><span class="st" title="${t('Рекорд')}">${CUP}${this.best.toLocaleString()}</span>`;
     this.progress();
   },
   progress() { const i = $('#scorebar .sm i') as HTMLElement; if (i) i.style.width = this.mult >= MAXM ? '100%' : ((performance.now() - this.since) % STEP) / STEP * 100 + '%'; },
@@ -35,6 +52,18 @@ export const Score = {
     const e = document.createElement('b'); e.className = 'sfloat' + (bad ? ' bad' : ''); e.textContent = txt; bar.appendChild(e); setTimeout(() => e.remove(), 700);
   },
 };
+const CUP = '<svg viewBox="0 0 24 24" class="cup"><path d="M7 3h10v3h3v2a5 5 0 0 1-4.3 5A5 5 0 0 1 13 15.7V18h3v3H8v-3h3v-2.3A5 5 0 0 1 8.3 13 5 5 0 0 1 4 8V6h3z" fill="#ffc533" stroke="#1b1b1f" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+
+/** big centred text over the stage (combo cheers) */
+export function cheer(txt: string) {
+  const st = $('#stage'); if (!st || !txt) return;
+  st.querySelector('.cheer')?.remove();
+  const e = document.createElement('div'); e.className = 'cheer'; e.textContent = txt; st.appendChild(e); setTimeout(() => e.remove(), 1300);
+}
+function banner(txt: string) {
+  document.querySelector('.hsban')?.remove();
+  const e = document.createElement('div'); e.className = 'hsban'; e.innerHTML = `${CUP}<b>${txt}</b>`; document.body.appendChild(e); setTimeout(() => e.remove(), 2400);
+}
 
 const ZONES: [number, number, number][] = [[0, .32, 2], [.32, .44, 3], [.44, .56, 4], [.56, .68, 3], [.68, 1, 2]];
 /** end-of-round sheet: shows points, a swinging needle; "Stop" + ad multiplies, or take the plain amount */
