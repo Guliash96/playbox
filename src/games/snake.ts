@@ -51,7 +51,7 @@ const Snake: Game & Record<string, any> = {
     this.lanes = Array.from({ length: L < 4 ? 3 : L < 10 ? 4 : 5 }, () => [] as Sn[]);
     shuffle(all).forEach((s, i) => this.lanes[i % this.lanes.length].push(s));
     this.cap = L < 6 ? 5 : 4; this.nest = [] as Sn[]; this.cont = false; this.runs = [] as Run[]; this.queue = [] as Sn[];
-    this.el.innerHTML = `<div class="sx"><div class="px"><svg class="belt"></svg><div class="bricks"></div><div class="track"></div></div><div class="nest"></div><div class="lanes"></div></div>`;
+    this.el.innerHTML = `<div class="sx"><div class="px"><svg class="belt"></svg><canvas class="bricks"></canvas><div class="track"></div></div><div class="nest"></div><div class="lanes"></div></div>`;
     this.layout(); this.renderQ(); this.last = 0; this.loop(0);
     setTools([['i:restart', () => { Score.lose(); this.load(); }]]);
   },
@@ -60,7 +60,7 @@ const Snake: Game & Record<string, any> = {
       cs = this.cs = Math.max(6, Math.floor(Math.min((this.el.clientWidth - 16) / (W + 2), (this.el.clientHeight - q) / (H + 2)) * 2) / 2);
     const px = this.el.querySelector('.px'); px.style.cssText = `width:${(W + 2) * cs}px;height:${(H + 2) * cs}px;--cs:${cs}px`;
     this.el.querySelector('.belt').innerHTML = `<rect x="${cs / 2}" y="${cs / 2}" width="${(W + 1) * cs}" height="${(H + 1) * cs}" rx="${cs * .6}" fill="none" stroke="#5a4c9c" stroke-width="${cs * .86}"/><rect x="${cs / 2}" y="${cs / 2}" width="${(W + 1) * cs}" height="${(H + 1) * cs}" rx="${cs * .6}" fill="none" stroke="#fff" stroke-opacity=".18" stroke-width="2" stroke-dasharray="${cs * .3} ${cs * .4}" class="beltdash"/><g transform="translate(${cs / 2} ${(H + 1.5) * cs})"><circle r="${cs * .55}" fill="#ffd23f" stroke="#1b1b1f" stroke-width="2"/><path d="M${-cs * .22} ${cs * .1}a${cs * .25} ${cs * .25} 0 1 1 ${cs * .1} ${cs * .18}" fill="none" stroke="#1b1b1f" stroke-width="2.4" stroke-linecap="round"/><path d="M${-cs * .3} ${cs * .02}l${cs * .08} ${cs * .14} ${cs * .12} -${cs * .08}" fill="none" stroke="#1b1b1f" stroke-width="2.4" stroke-linecap="round"/></g>`;
-    this.el.querySelector('.bricks').innerHTML = this.g.map((c: string, i: number) => c ? `<i data-i="${i}" style="left:${(i % W + 1) * cs}px;top:${(Math.floor(i / W) + 1) * cs}px;--c:${shade(PAL[c], this.jit[i])}"></i>` : '').join('');
+    this.drawBricks();
     this.P = this.path();
   },
   hud() { setStats(`${pill('Рів. ' + this.lvl)}${pill(this.g.filter(Boolean).length + ' цеглин')}`); },
@@ -113,6 +113,7 @@ const Snake: Game & Record<string, any> = {
     this.raf = requestAnimationFrame(t => this.loop(t));
     const dt = Math.min(.05, (ts - (this.last || ts)) / 1000); this.last = ts;
     if (Paused.on) return;
+    if (this.dirty) { this.dirty = false; this.drawBricks(); }
     if (this.queue.length && (!this.runs.length || this.runs[this.runs.length - 1].s > 2.2)) this.spawn(this.queue.shift());
     const end = this.P.length - 1;
     for (const r of [...this.runs]) {
@@ -127,14 +128,40 @@ const Snake: Game & Record<string, any> = {
   bite(r: Run, p: any) {
     const t = this.facing(p.side, p.i);
     if (t < 0 || r.sn.n <= 0 || this.g[t] !== r.sn.c) return;
-    this.g[t] = null; r.sn.n--; Score.good(3); r.head.querySelector('b')!.textContent = String(r.sn.n);
+    this.bitC = this.g[t]; this.g[t] = null; r.sn.n--; Score.good(3); r.head.querySelector('b')!.textContent = String(r.sn.n);
     if (r.segs.length > 3) r.segs.pop()?.remove();
     flash(r.head, 'chomp', 180); sfx('pop');
-    const b = this.el.querySelector(`.bricks [data-i="${t}"]`) as HTMLElement;
-    if (b) { const dx = p.x * this.cs - parseFloat(b.style.left), dy = p.y * this.cs - parseFloat(b.style.top); b.animate([{ transform: 'none' }, { transform: `translate(${dx}px,${dy}px) scale(.25)`, opacity: .2 }], { duration: 200, easing: 'ease-in' }).onfinish = () => b.remove(); }
+    this.flyBrick(t, p); this.dirty = true;
     this.hud();
     if (r.sn.n <= 0) this.popRun(r);
     if (!this.g.some(Boolean) && !this.over) { this.over = true; done('sn_lvl', this.lvl, () => this.load()); }
+  },
+  /** all bricks on one canvas (a DOM element per brick was far too slow with 1600 of them) */
+  drawBricks() {
+    const cv = this.el.querySelector('canvas.bricks') as HTMLCanvasElement; if (!cv) return;
+    const W = this.W, cs = this.cs, dpr = Math.min(2, devicePixelRatio || 1), size = (W + 2) * cs;
+    if (cv.width !== Math.round(size * dpr)) { cv.width = cv.height = Math.round(size * dpr); cv.style.width = cv.style.height = size + 'px'; }
+    const x = cv.getContext('2d')!; x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, size, size);
+    const grads: Record<string, CanvasGradient> = {}, top = cs * .14, rt = cs * .3, rb = cs * .1;
+    const grad = (col: string) => grads[col] ||= (() => { const g = x.createLinearGradient(0, -top, 0, cs); g.addColorStop(0, shade(col, .5)); g.addColorStop(.18, shade(col, .2)); g.addColorStop(.42, col); g.addColorStop(.85, shade(col, -.12)); g.addColorStop(1, shade(col, -.42)); return g; })();
+    const H = this.H;
+    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
+      const k = this.g[r * W + c]; if (!k) continue;
+      const col = shade(PAL[k], Math.round(this.jit[r * W + c] * 30) / 30);
+      x.save(); x.translate((c + 1) * cs, (r + 1) * cs);
+      x.beginPath(); x.moveTo(0, cs - rb); x.lineTo(0, -top + rt); x.quadraticCurveTo(0, -top, rt, -top); x.lineTo(cs - rt, -top); x.quadraticCurveTo(cs, -top, cs, -top + rt); x.lineTo(cs, cs - rb); x.quadraticCurveTo(cs, cs, cs - rb, cs); x.lineTo(rb, cs); x.quadraticCurveTo(0, cs, 0, cs - rb); x.closePath();
+      x.fillStyle = grad(col); x.fill();
+      x.fillStyle = 'rgba(0,0,0,.14)'; x.fillRect(0, 0, .8, cs); x.fillRect(cs - .8, 0, .8, cs);
+      x.fillStyle = 'rgba(0,0,0,.28)'; x.fillRect(rb, cs - 1.2, cs - 2 * rb, 1.2);
+      x.fillStyle = 'rgba(255,255,255,.92)'; const hw = cs * .48, hh = Math.max(1.6, cs * .12); x.beginPath(); x.roundRect((cs - hw) / 2, cs * .7 - hh, hw, hh, hh / 2); x.fill();
+      x.restore();
+    }
+  },
+  /** the bitten brick flies into the snake's mouth */
+  flyBrick(t: number, p: any) {
+    const cs = this.cs, W = this.W, e = document.createElement('i'); e.className = 'bfly';
+    const l = (t % W + 1) * cs, tp = (Math.floor(t / W) + 1) * cs; e.style.cssText = `left:${l}px;top:${tp}px;width:${cs}px;height:${cs}px;--c:${PAL[this.bitC || 'W']}`; this.el.querySelector('.px').appendChild(e);
+    e.animate([{ transform: 'none' }, { transform: `translate(${p.x * cs - l}px,${p.y * cs - tp}px) scale(.25)`, opacity: .2 }], { duration: 200, easing: 'ease-in' }).onfinish = () => e.remove();
   },
   /** a snake that has eaten everything pops right away and frees the belt */
   popRun(r: Run) {

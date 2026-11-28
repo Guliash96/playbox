@@ -7,9 +7,10 @@
 .beltdash{animation:belt 1s linear infinite}
 @keyframes belt{to{stroke-dashoffset:calc(var(--cs) * .7)}}
 .px::before{content:"";position:absolute;inset:calc(var(--cs) - 2px);border-radius:8px;background:#3b3170;box-shadow:inset 0 2px 8px rgba(0,0,0,.5)}
-.bricks i{position:absolute;width:var(--cs);height:var(--cs)}
-.bricks i::before{content:"";position:absolute;left:0;right:0;bottom:0;top:-12%;border-radius:30% 30% 10% 10%/24% 24% 8% 8%;background:linear-gradient(180deg,color-mix(in srgb,var(--c) 50%,#fff) 0%,color-mix(in srgb,var(--c) 80%,#fff) 16%,var(--c) 38%,color-mix(in srgb,var(--c) 90%,#000) 80%,color-mix(in srgb,var(--c) 60%,#000) 100%);box-shadow:inset 1px 0 0 rgba(0,0,0,.14),inset -1px 0 0 rgba(0,0,0,.14),inset 0 -1.5px 0 rgba(0,0,0,.3)}
-.bricks i::after{content:"";position:absolute;left:26%;right:26%;bottom:18%;height:max(2px,12%);border-radius:99px;background:rgba(255,255,255,.92);box-shadow:0 0 2px rgba(255,255,255,.6)}
+canvas.bricks{position:absolute;left:0;top:0;pointer-events:none}
+.bfly{position:absolute;z-index:3;pointer-events:none}
+.bfly::before{content:"";position:absolute;left:0;right:0;bottom:0;top:-12%;border-radius:30% 30% 10% 10%/24% 24% 8% 8%;background:linear-gradient(180deg,color-mix(in srgb,var(--c) 50%,#fff) 0%,color-mix(in srgb,var(--c) 80%,#fff) 16%,var(--c) 38%,color-mix(in srgb,var(--c) 90%,#000) 80%,color-mix(in srgb,var(--c) 60%,#000) 100%);box-shadow:inset 1px 0 0 rgba(0,0,0,.14),inset -1px 0 0 rgba(0,0,0,.14),inset 0 -1.5px 0 rgba(0,0,0,.3)}
+.bfly::after{content:"";position:absolute;left:26%;right:26%;bottom:18%;height:max(2px,12%);border-radius:99px;background:rgba(255,255,255,.92);box-shadow:0 0 2px rgba(255,255,255,.6)}
 .track{position:absolute;inset:0;pointer-events:none}
 .track i{position:absolute;left:0;top:0;width:var(--cs);height:var(--cs);will-change:transform}
 .track .seg::before{content:"";position:absolute;inset:calc(var(--cs)*(.5 - .4*var(--k)));border-radius:50%;background:radial-gradient(circle at 50% 50%,var(--d) 0 22%,transparent 24%),radial-gradient(circle at 35% 30%,color-mix(in srgb,var(--c) 50%,#fff),var(--c) 55%,var(--d));box-shadow:0 2px 3px rgba(0,0,0,.35)}
