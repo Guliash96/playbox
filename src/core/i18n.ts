@@ -10,6 +10,16 @@ export const LANGS = [
 const ORDER = ['uk', 'en', 'ru', 'es', 'pt', 'de', 'fr', 'tr', 'pl'];
 
 const TABLE = `
+Дивитись рекламу|Watch an ad|Смотреть рекламу|Ver anuncio|Ver anúncio|Werbung ansehen|Regarder une pub|Reklam izle|Obejrzyj reklamę
+Реклама знову через {0} хв|Ad available again in {0} min|Реклама снова через {0} мин|Anuncio de nuevo en {0} min|Anúncio de novo em {0} min|Werbung wieder in {0} Min.|Pub de nouveau dans {0} min|Reklam {0} dk sonra|Reklama znów za {0} min
+За {0} 💎|For {0} 💎|За {0} 💎|Por {0} 💎|Por {0} 💎|Für {0} 💎|Pour {0} 💎|{0} 💎 karşılığı|Za {0} 💎
+×2 швидкість|×2 speed|×2 скорость|Velocidad ×2|Velocidade ×2|×2 Tempo|Vitesse ×2|×2 hız|Prędkość ×2
+Змійки повзуть удвічі швидше 1 хвилину.|Snakes crawl twice as fast for 1 minute.|Змейки ползут вдвое быстрее 1 минуту.|Las serpientes van el doble de rápido durante 1 minuto.|As cobras vão duas vezes mais rápido por 1 minuto.|Schlangen kriechen 1 Minute doppelt so schnell.|Les serpents vont deux fois plus vite pendant 1 minute.|Yılanlar 1 dakika iki kat hızlı.|Węże pełzną dwa razy szybciej przez 1 minutę.
+×2 швидкість на 1 хв!|×2 speed for 1 min!|×2 скорость на 1 мин!|¡Velocidad ×2 por 1 min!|Velocidade ×2 por 1 min!|×2 Tempo für 1 Min.!|Vitesse ×2 pendant 1 min !|1 dk ×2 hız!|Prędkość ×2 na 1 min!
+×2 ще {0} с|×2 for {0} more s|×2 ещё {0} с|×2 durante {0} s más|×2 por mais {0} s|×2 noch {0} s|×2 encore {0} s|×2 {0} sn daha|×2 jeszcze {0} s
++1 гніздо|+1 nest slot|+1 гнездо|+1 hueco|+1 espaço|+1 Nestplatz|+1 place|+1 yuva|+1 miejsce
+Ще одне місце в гнізді до кінця рівня.|One more nest slot until the end of the level.|Ещё одно место в гнезде до конца уровня.|Un hueco más hasta el final del nivel.|Mais um espaço até o fim do nível.|Ein Nestplatz mehr bis zum Levelende.|Une place de plus jusqu'à la fin du niveau.|Seviye sonuna kadar bir yuva daha.|Jedno miejsce więcej do końca poziomu.
+Максимум гнізд|Maximum slots reached|Максимум гнёзд|Máximo de huecos|Máximo de espaços|Maximale Plätze|Places au maximum|Maksimum yuva|Maksimum miejsc
 Пауза|Pause|Пауза|Pausa|Pausa|Pause|Pause|Duraklat|Pauza
 Добре!|Good!|Хорошо!|¡Bien!|Boa!|Gut!|Bien !|İyi!|Dobrze!
 Чудово!|Great!|Отлично!|¡Genial!|Ótimo!|Super!|Super !|Harika!|Świetnie!

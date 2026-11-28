@@ -48,3 +48,4 @@ canvas.bricks{position:absolute;left:0;top:0;pointer-events:none}
 .coil{width:66px;height:66px}.coil b{left:18px;top:28px;width:30px;height:24px;font-size:16px;line-height:20px}
 .coil.sm{width:44px;height:44px}.coil.sm b{left:11px;top:18px;width:22px;height:17px;font-size:12px;line-height:13px}
 }
+.ibig.x2{background:linear-gradient(#fff3a0,#ffc533)}.ibig.nest{background:linear-gradient(#ffe0c2,#e8a35a)}

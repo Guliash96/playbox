@@ -11,6 +11,8 @@ import { done } from '../core/flow';
 import { Score } from '../core/score';
 import { sfx } from '../core/sfx';
 import { Paused } from '../core/pause';
+import { adOrGems } from '../core/wallet';
+import { t } from '../core/i18n';
 import type { Game } from './registry';
 
 import { PAL, pixPic } from '../art/pixpics';
@@ -50,10 +52,16 @@ const Snake: Game & Record<string, any> = {
     for (const c in count) { let left = count[c]; while (left > 0) { const n = Math.min(left, lo + R(hi - lo + 1)); all.push({ c, n }); left -= n; } }
     this.lanes = Array.from({ length: L < 4 ? 3 : L < 10 ? 4 : 5 }, () => [] as Sn[]);
     shuffle(all).forEach((s, i) => this.lanes[i % this.lanes.length].push(s));
-    this.cap = L < 6 ? 5 : 4; this.nest = [] as Sn[]; this.cont = false; this.runs = [] as Run[]; this.queue = [] as Sn[];
+    this.cap = L < 6 ? 5 : 4; this.fast = 0; this.nest = [] as Sn[]; this.cont = false; this.runs = [] as Run[]; this.queue = [] as Sn[];
     this.el.innerHTML = `<div class="sx"><div class="px"><svg class="belt"></svg><canvas class="bricks"></canvas><div class="track"></div></div><div class="nest"></div><div class="lanes"></div></div>`;
     this.layout(); this.renderQ(); this.last = 0; this.loop(0);
-    setTools([['i:restart', () => { Score.lose(); this.load(); }]]);
+    this.tools();
+  },
+  tools() {
+    const left = Math.max(0, Math.ceil(this.fast || 0));
+    setTools([['i:x2', () => left ? toast(t('×2 ще {0} с', left)) : adOrGems('sn_x2', '×2 швидкість', 'Змійки повзуть удвічі швидше 1 хвилину.', 15, 30, () => { this.fast = 60; this.tools(); toast(t('×2 швидкість на 1 хв!')); }), false, left ? left + 'с' : undefined],
+      ['i:nest', () => this.cap >= 7 ? toast(t('Максимум гнізд')) : adOrGems('sn_nest', '+1 гніздо', 'Ще одне місце в гнізді до кінця рівня.', 20, 30, () => { this.cap++; this.renderQ(); this.tools(); }), false, '+'],
+      ['i:restart', () => { Score.lose(); this.load(); }]]);
   },
   layout() {
     const W = this.W, H = this.H, q = (this.el.querySelector('.nest')?.offsetHeight || 60) + (this.el.querySelector('.lanes')?.offsetHeight || 130) + 40,
@@ -114,10 +122,11 @@ const Snake: Game & Record<string, any> = {
     const dt = Math.min(.05, (ts - (this.last || ts)) / 1000); this.last = ts;
     if (Paused.on) return;
     if (this.dirty) { this.dirty = false; this.drawBricks(); }
+    if (this.fast > 0) { this.fast -= dt; if ((this.fastT = (this.fastT || 0) + dt) > 1 || this.fast <= 0) { this.fastT = 0; this.tools(); } }
     if (this.queue.length && (!this.runs.length || this.runs[this.runs.length - 1].s > 2.2)) this.spawn(this.queue.shift());
     const end = this.P.length - 1;
     for (const r of [...this.runs]) {
-      r.s += SPEED * dt;
+      r.s += SPEED * dt * (this.fast > 0 ? 2 : 1);
       while (r.next <= Math.min(r.s, end)) { this.bite(r, this.P[r.next]); r.next++; }
       const [x, y, dx, dy] = this.at(r.s);
       r.head.style.transform = `translate(${x}px,${y}px)`; r.head.style.setProperty('--rot', Math.atan2(dy, dx) + 'rad');

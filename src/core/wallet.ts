@@ -61,3 +61,17 @@ export function shopSheet() {
 }
 const today = () => new Date().toISOString().slice(0, 10);
 function adsToday() { const a = store.get<{ d: string; n: number }>('adg', { d: '', n: 0 }); return a.d === today() ? a.n : 0; }
+
+// ---------- ad-or-crystals bonuses ----------
+/** a bonus you can take for an ad; after that the ad option sleeps `coolMin` minutes and the bonus costs crystals */
+export function adOrGems(key: string, name: string, desc: string, price: number, coolMin: number, grant: () => void) {
+  const k = 'cool_' + key, now = Date.now(), until = store.get(k, 0), byAd = now >= until;
+  const mins = Math.ceil((until - now) / 60000);
+  modal(`<h2>${t(name)}</h2><p class="muted">${t(desc)}</p>
+    <div class="btns">${byAd ? `<button class="btn" id="ag_ad">${ICON.ad}<span>${t('Дивитись рекламу')}</span></button>` : `<p class="muted" style="text-align:center">${t('Реклама знову через {0} хв', mins)}</p>`}
+    <button class="btn ${byAd ? 'ghost' : ''}" id="ag_gem">${ICON.gem}<span>${t('За {0} 💎', price)}</span></button><button class="btn ghost" id="ag_no">${t('Скасувати')}</button></div>
+    <p class="muted" style="text-align:center">${t('У тебе {0} 💎', gems())}</p>`);
+  $('#ag_no').onclick = closeModal;
+  const ad = document.getElementById('ag_ad'); if (ad) ad.onclick = () => { closeModal(); Ads.rewarded(() => { store.set(k, Date.now() + coolMin * 60000); grant(); }); };
+  $('#ag_gem').onclick = () => { if (!spendGems(price)) { closeModal(); return shopSheet(); } closeModal(); grant(); };
+}
