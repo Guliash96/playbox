@@ -4,7 +4,7 @@
 // watch an ad for +1 or buy a few for crystals.
 // NOTE: stored on the device for now; moving the balance to the server comes with real payments.
 import { $ } from './util';
-import { modal, closeModal, toast, ICON } from './ui';
+import { modal, closeModal, toast, ICON, dismissable } from './ui';
 import { store } from './store';
 import { Ads } from './ads';
 import { t } from './i18n';
@@ -29,7 +29,7 @@ export function useBooster(id: string, name: string, price: number, start: numbe
     <div class="btns"><button class="btn" id="b_ad">${ICON.ad}<span>${t('Реклама: +1')}</span></button>
     <button class="btn ghost" id="b_gem">${ICON.gem}<span>${t('3 шт. за {0} 💎', price)}</span></button><button class="btn ghost" id="b_no">${t('Скасувати')}</button></div>
     <p class="muted" style="text-align:center">${t('У тебе {0} 💎', gems())}</p>`);
-  $('#b_no').onclick = closeModal;
+  dismissable(); $('#b_no').onclick = closeModal;
   $('#b_ad').onclick = () => { closeModal(); Ads.rewarded(() => { onChange?.(); then(); }); };
   $('#b_gem').onclick = () => {
     if (!spendGems(price)) { closeModal(); return shopSheet(); }
@@ -55,7 +55,7 @@ export function shopSheet() {
     <div class="packs">${PACKS.map(([n, s, e], i) => `<button class="pack" data-p="${i}">${ICON.gem}<b>${n}</b><span>${tg ? s : e}</span></button>`).join('')}</div>
     <div class="btns"><button class="btn" id="g_ad" ${left > 0 ? '' : 'disabled'}>${ICON.ad}<span>${t('Реклама: +10 💎 ({0} сьогодні)', Math.max(0, left))}</span></button><button class="btn ghost" id="g_x">${t('Закрити')}</button></div>
     <p class="muted" style="font-size:12px;text-align:center">${t('Демо: оплата ще не підключена, кристали нараховуються безкоштовно.')}</p>`);
-  $('#g_x').onclick = closeModal;
+  dismissable(); $('#g_x').onclick = closeModal;
   $('#g_ad').onclick = () => { closeModal(); Ads.rewarded(() => { store.set('adg', { d: today(), n: adsToday() + 1 }); addGems(10, 'Реклама'); }); };
   document.querySelectorAll<HTMLElement>('#modal [data-p]').forEach(b => b.onclick = () => { closeModal(); addGems(PACKS[+b.dataset.p!][0], 'Покупка (демо)'); });
 }
@@ -71,7 +71,7 @@ export function adOrGems(key: string, name: string, desc: string, price: number,
     <div class="btns">${byAd ? `<button class="btn" id="ag_ad">${ICON.ad}<span>${t('Дивитись рекламу')}</span></button>` : `<p class="muted" style="text-align:center">${t('Реклама знову через {0} хв', mins)}</p>`}
     <button class="btn ${byAd ? 'ghost' : ''}" id="ag_gem">${ICON.gem}<span>${t('За {0} 💎', price)}</span></button><button class="btn ghost" id="ag_no">${t('Скасувати')}</button></div>
     <p class="muted" style="text-align:center">${t('У тебе {0} 💎', gems())}</p>`);
-  $('#ag_no').onclick = closeModal;
+  dismissable(); $('#ag_no').onclick = closeModal;
   const ad = document.getElementById('ag_ad'); if (ad) ad.onclick = () => { closeModal(); Ads.rewarded(() => { store.set(k, Date.now() + coolMin * 60000); grant(); }); };
   $('#ag_gem').onclick = () => { if (!spendGems(price)) { closeModal(); return shopSheet(); } closeModal(); grant(); };
 }

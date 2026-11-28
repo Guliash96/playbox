@@ -6,6 +6,7 @@ import { $ } from './util';
 import { modal, closeModal, toast } from './ui';
 import { store } from './store';
 import { platform } from './platform';
+import { pause, resume, Paused } from './pause';
 
 interface Provider { interstitial(): Promise<void>; rewarded(): Promise<boolean>; }
 
@@ -27,8 +28,9 @@ const provider: Provider = demo;
 
 export const Ads = {
   noAds: () => store.get('noads', false),
-  interstitial(done: () => void) { this.noAds() ? done() : provider.interstitial().then(done); },
-  rewarded(done: () => void) { provider.rewarded().then(ok => ok && done()); },
+  // the game is paused while an ad is on screen
+  interstitial(done: () => void) { if (this.noAds()) return done(); const was = Paused.on; pause(); provider.interstitial().then(() => { if (!was) resume(); done(); }); },
+  rewarded(done: () => void) { const was = Paused.on; pause(); provider.rewarded().then(ok => { if (!was) resume(); if (ok) done(); }); },
 };
 
 const PRICES: Record<string, string> = { telegram: '149 Stars', web: '2,99 €', android: '2,99 €', ios: '2,99 €' };

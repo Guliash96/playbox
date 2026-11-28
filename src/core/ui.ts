@@ -7,8 +7,12 @@ export type Btn = [string, (() => void)?];
 export function modal(html: string, btns: Btn[] = []) {
   const m = $('#modal');
   m.innerHTML = `<div class="sheet" role="dialog" aria-modal="true">${html}<div class="btns">${btns.map((b, i) => `<button class="btn ${i ? 'ghost' : ''}" data-i="${i}">${b[0]}</button>`).join('')}</div></div>`;
-  m.hidden = false;
+  m.hidden = false; m.onclick = null;
   $$('[data-i]', m).forEach(el => el.onclick = () => { closeModal(); btns[+el.dataset.i!][1]?.(); });
+}
+/** let the just-opened sheet close with a tap outside it */
+export function dismissable(onClose?: () => void) {
+  const m = $('#modal'); m.onclick = (e: MouseEvent) => { if (e.target === m) { closeModal(); onClose?.(); } };
 }
 export function closeModal() { const m = $('#modal'); m.hidden = true; m.innerHTML = ''; }
 
@@ -32,6 +36,9 @@ export const ICON: Record<string, string> = {
   pause: S('<rect x="6" y="5" width="4" height="14" rx="1.5" fill="#1b1b1f"/><rect x="14" y="5" width="4" height="14" rx="1.5" fill="#1b1b1f"/>'),
   x2: S('<path d="M13 3L5 13h6l-1 8 8-10h-6z" fill="#ffd23f" stroke="#1b1b1f" stroke-width="1.8" stroke-linejoin="round"/><text x="18.5" y="23" font-size="8" font-weight="800" text-anchor="middle" fill="#1b1b1f" font-family="Fredoka,sans-serif">×2</text>'),
   nest: S('<ellipse cx="12" cy="15" rx="9" ry="5" fill="#8a5a2b" stroke="#1b1b1f" stroke-width="1.8"/><ellipse cx="12" cy="13" rx="4" ry="5" fill="#fff6d6" stroke="#1b1b1f" stroke-width="1.6"/><path d="M19 3v6M16 6h6" stroke="#2fbf71" stroke-width="2.6" stroke-linecap="round"/>'),
+  bolt: S('<path d="M13 2L4 14h7l-1 8 9-12h-7z" fill="#ffd23f" stroke="#1b1b1f" stroke-width="1.8" stroke-linejoin="round"/>'),
+  boom: S('<path d="M12 2l2.2 5 5-2-2 5 5 2-5 2 2 5-5-2-2.2 5-2.2-5-5 2 2-5-5-2 5-2-2-5 5 2z" fill="#ff6a4a" stroke="#1b1b1f" stroke-width="1.5" stroke-linejoin="round"/>'),
+  snow: S('<path d="M12 2v20M3.3 7l17.4 10M3.3 17L20.7 7M9 4l3 2 3-2M9 20l3-2 3 2" fill="none" stroke="#1b1b1f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'),
   menu: S('<path d="M6 8h12M6 12h12M6 16h12" stroke="#1b1b1f" stroke-width="2.6" stroke-linecap="round"/>'),
   bug: S('<path d="M12 3L22 20H2z" fill="#ff3d4f" stroke="#1b1b1f" stroke-width="2" stroke-linejoin="round"/><path d="M12 9v5" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="17" r="1.4" fill="#fff"/>'),
   ad: S('<rect x="3" y="5" width="18" height="14" rx="3" fill="#7fd1ff" stroke="#1b1b1f" stroke-width="2"/><path d="M10 9l5 3-5 3z" fill="#1b1b1f"/>'),

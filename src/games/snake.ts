@@ -8,7 +8,7 @@ import { haptic } from '../core/platform';
 import { setStats, setTools, modal, pill, toast, flash } from '../core/ui';
 import { Ads } from '../core/ads';
 import { done } from '../core/flow';
-import { Score } from '../core/score';
+import { Score, setStep } from '../core/score';
 import { sfx } from '../core/sfx';
 import { Paused } from '../core/pause';
 import { adOrGems } from '../core/wallet';
@@ -36,7 +36,7 @@ const headSVG = (col: string) => { const d = shade(col, -.35), l = shade(col, .4
 const Snake: Game & Record<string, any> = {
   title: 'Пікс-змійки', theme: 'th-snake',
   start(el: HTMLElement) {
-    this.el = el; this.load();
+    this.el = el; setStep(15000); this.load();
     let w0 = 0, h0 = 0; this.ro = new ResizeObserver(() => { const w = el.clientWidth, h = el.clientHeight; if (Math.abs(w - w0) > 4 || Math.abs(h - h0) > 4) { w0 = w; h0 = h; if (this.g) this.layout(); } }); this.ro.observe(el);
   },
   stop() { this.dead = true; cancelAnimationFrame(this.raf); this.ro?.disconnect(); },

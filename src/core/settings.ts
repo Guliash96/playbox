@@ -1,6 +1,6 @@
 // Player settings (sound, vibration, tile highlight) + the in-game ≡ menu.
 import { $ } from './util';
-import { modal, closeModal } from './ui';
+import { modal, closeModal, dismissable } from './ui';
 import { store } from './store';
 import { t } from './i18n';
 import { isMuted, setMuted } from './sfx';
@@ -19,6 +19,7 @@ export function settingsMenu(back?: () => void) {
   modal(`<h2>${t('Налаштування')}</h2><div class="srows">
     ${row('s_snd', 'Звук', !isMuted())}${row('s_vib', 'Вібрація', Settings.vib())}${menuExtra.highlight ? row('s_hl', 'Підсвітка доступних', Settings.hl()) : ''}
     </div>${menuExtra.items.length ? `<div class="btns">${menuExtra.items.map((x, i) => `<button class="btn ghost" data-mx="${i}">${t(x[0])}</button>`).join('')}</div>` : ''}`, [[t('Закрити'), back]]);
+  dismissable(back);
   const flip = (id: string, get: () => boolean, set: (v: boolean) => void) => { const b = $('#' + id); if (b) b.onclick = () => { set(!get()); b.querySelector('i')!.classList.toggle('on', get()); }; };
   flip('s_snd', () => !isMuted(), v => setMuted(!v));
   flip('s_vib', Settings.vib, v => Settings.set('vib', v));

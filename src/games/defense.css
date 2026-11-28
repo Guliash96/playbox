@@ -9,3 +9,4 @@
 .bossbar{position:absolute;left:50%;top:8px;transform:translateX(-50%);z-index:4;width:62%;height:22px;border-radius:99px;background:#2b1b24;border:3px solid #1b1b1f;overflow:hidden;pointer-events:none}
 .bossbar i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(#ff7a5a,#e8324a);transition:width .15s}
 .bossbar b{position:absolute;inset:0;z-index:1;text-align:center;color:#fff;font-size:16px;line-height:16px;-webkit-text-stroke:3px #1b1b1f;paint-order:stroke fill}
+.ibig.bolt{background:linear-gradient(#fff3a0,#ffc533)}.ibig.boom{background:linear-gradient(#ffd0c0,#ff7a5a)}.ibig.snow{background:linear-gradient(#e0f6ff,#7fd8ff)}

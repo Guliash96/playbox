@@ -1,7 +1,7 @@
 // Red-triangle bug report: screenshot of the screen + short description + device info → Supabase.
 // Also: first-launch privacy / cookies consent.
 import { $ } from './util';
-import { modal, closeModal, toast } from './ui';
+import { modal, closeModal, toast, dismissable } from './ui';
 import { store } from './store';
 import { t, lang } from './i18n';
 import { platform } from './platform';
@@ -29,7 +29,7 @@ export async function bugReport() {
     <label class="chk"><input type="checkbox" id="bshot" ${shot ? 'checked' : 'disabled'}> ${t('Додати скріншот')}</label>
     <textarea id="btxt" class="inp" rows="4" maxlength="2000" placeholder="${t('Що сталося? Що ти робив перед цим?')}"></textarea>
     <div class="btns"><button class="btn" id="bsend">${t('Надіслати')}</button><button class="btn ghost" id="bx">${t('Скасувати')}</button></div>`);
-  $('#bx').onclick = done;
+  $('#bx').onclick = done; dismissable(() => { if (!was) resume(); });
   $('#bsend').onclick = async () => {
     const txt = ($('#btxt') as HTMLTextAreaElement).value.trim(), b = $('#bsend') as HTMLButtonElement;
     if (!txt) { ($('#btxt') as HTMLElement).focus(); return; }

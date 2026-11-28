@@ -1,6 +1,6 @@
 // Global pause: freezes 3D stages, game loops and the score multiplier timer.
 import { $ } from './util';
-import { modal, closeModal, ICON } from './ui';
+import { modal, closeModal, ICON, dismissable } from './ui';
 import { t } from './i18n';
 import { settingsMenu } from './settings';
 
@@ -17,6 +17,7 @@ export function pauseSheet() {
     <button class="btn" id="p_go">${t('Продовжити')}</button>
     <button class="btn ghost" id="p_set">${t('Налаштування')}</button>
     <button class="btn ghost" id="p_home">${t('До ігор')}</button></div>`);
+  dismissable(() => resume());
   $('#p_go').onclick = () => { closeModal(); resume(); };
   $('#p_set').onclick = () => { closeModal(); settingsMenu(() => pauseSheet()); };
   $('#p_home').onclick = () => { closeModal(); resume(); location.hash = ''; };

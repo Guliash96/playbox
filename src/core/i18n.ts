@@ -10,6 +10,23 @@ export const LANGS = [
 const ORDER = ['uk', 'en', 'ru', 'es', 'pt', 'de', 'fr', 'tr', 'pl'];
 
 const TABLE = `
+Реклама: перемішати людей|Ad: shuffle people|Реклама: перемешать людей|Anuncio: mezclar gente|Anúncio: embaralhar pessoas|Werbung: Leute mischen|Pub : mélanger les gens|Reklam: insanları karıştır|Reklama: przetasuj ludzi
+Реклама: +1 місце|Ad: +1 spot|Реклама: +1 место|Anuncio: +1 plaza|Anúncio: +1 vaga|Werbung: +1 Platz|Pub : +1 place|Reklam: +1 yer|Reklama: +1 miejsce
+Програш!|You lost!|Проигрыш!|¡Perdiste!|Você perdeu!|Verloren!|Perdu !|Kaybettin!|Przegrana!
+Усі місця очікування зайняті, і ніхто з них не підходить до автобуса.|All waiting spots are full and nobody there fits the bus.|Все места ожидания заняты, и никто не подходит к автобусу.|Todas las plazas están llenas y nadie encaja en el autobús.|Todas as vagas estão cheias e ninguém serve para o ônibus.|Alle Warteplätze sind voll und niemand passt zum Bus.|Toutes les places sont prises et personne ne va dans le bus.|Tüm bekleme yerleri dolu ve kimse otobüse uymuyor.|Wszystkie miejsca są zajęte i nikt nie pasuje do autobusu.
+Перемішати людей|Shuffle people|Перемешать людей|Mezclar gente|Embaralhar pessoas|Leute mischen|Mélanger les gens|İnsanları karıştır|Przetasuj ludzi
+Кольори людей у чергах і на платформі перемішаються.|People's colours in the queues and on the platform get shuffled.|Цвета людей в очередях и на платформе перемешаются.|Se mezclan los colores de la gente en filas y andén.|As cores das pessoas nas filas e na plataforma são embaralhadas.|Die Farben der Leute in den Schlangen und am Bahnsteig werden gemischt.|Les couleurs des gens dans les files et sur le quai sont mélangées.|Sıralardaki ve perondaki insanların renkleri karışır.|Kolory ludzi w kolejkach i na peronie zostaną przetasowane.
++1 місце|+1 spot|+1 место|+1 plaza|+1 vaga|+1 Platz|+1 place|+1 yer|+1 miejsce
+Ще одне місце очікування до кінця рівня.|One more waiting spot until the end of the level.|Ещё одно место ожидания до конца уровня.|Una plaza más hasta el final del nivel.|Mais uma vaga até o fim do nível.|Ein Warteplatz mehr bis zum Levelende.|Une place de plus jusqu'à la fin du niveau.|Seviye sonuna kadar bir bekleme yeri daha.|Jedno miejsce więcej do końca poziomu.
+Максимум місць|Maximum spots reached|Максимум мест|Máximo de plazas|Máximo de vagas|Maximale Plätze|Places au maximum|Maksimum yer|Maksimum miejsc
++3 бійці|+3 soldiers|+3 бойца|+3 soldados|+3 soldados|+3 Soldaten|+3 soldats|+3 asker|+3 żołnierzy
+Сповільнення|Slow-down|Замедление|Ralentizar|Lentidão|Verlangsamung|Ralentissement|Yavaşlatma|Spowolnienie
+×2 швидкість стрільби на 15 с.|×2 fire rate for 15 s.|×2 скорострельность на 15 с.|Cadencia ×2 durante 15 s.|Cadência ×2 por 15 s.|×2 Feuerrate für 15 s.|Cadence ×2 pendant 15 s.|15 sn ×2 atış hızı.|×2 szybkostrzelność na 15 s.
+×2 шкоди на 15 с.|×2 damage for 15 s.|×2 урона на 15 с.|Daño ×2 durante 15 s.|Dano ×2 por 15 s.|×2 Schaden für 15 s.|Dégâts ×2 pendant 15 s.|15 sn ×2 hasar.|×2 obrażeń na 15 s.
+Зомбі йдуть удвічі повільніше 15 с.|Zombies walk twice as slow for 15 s.|Зомби идут вдвое медленнее 15 с.|Los zombis van el doble de lento 15 s.|Zumbis andam duas vezes mais devagar por 15 s.|Zombies laufen 15 s halb so schnell.|Les zombies vont deux fois moins vite 15 s.|Zombiler 15 sn yarı hızda.|Zombie idą dwa razy wolniej przez 15 s.
+Реклама: відкинути зомбі|Ad: push the zombies back|Реклама: отбросить зомби|Anuncio: hacer retroceder a los zombis|Anúncio: empurrar os zumbis|Werbung: Zombies zurückdrängen|Pub : repousser les zombies|Reklam: zombileri geri püskürt|Reklama: odepchnij zombie
+Відродитись за {0} 💎|Revive for {0} 💎|Возродиться за {0} 💎|Revivir por {0} 💎|Reviver por {0} 💎|Wiederbeleben für {0} 💎|Revivre pour {0} 💎|{0} 💎 ile diril|Odrodź się za {0} 💎
+Ні|No|Нет|No|Não|Nein|Non|Hayır|Nie
 Дивитись рекламу|Watch an ad|Смотреть рекламу|Ver anuncio|Ver anúncio|Werbung ansehen|Regarder une pub|Reklam izle|Obejrzyj reklamę
 Реклама знову через {0} хв|Ad available again in {0} min|Реклама снова через {0} мин|Anuncio de nuevo en {0} min|Anúncio de novo em {0} min|Werbung wieder in {0} Min.|Pub de nouveau dans {0} min|Reklam {0} dk sonra|Reklama znów za {0} min
 За {0} 💎|For {0} 💎|За {0} 💎|Por {0} 💎|Por {0} 💎|Für {0} 💎|Pour {0} 💎|{0} 💎 karşılığı|Za {0} 💎

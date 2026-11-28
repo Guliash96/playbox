@@ -7,9 +7,10 @@ import './defense.css';
 import { R, pick } from '../core/util';
 import { store } from '../core/store';
 import { haptic } from '../core/platform';
-import { setStats, setTools, pill, hearts, toast } from '../core/ui';
-import { gameOver } from '../core/flow';
-import { Score } from '../core/score';
+import { setStats, setTools, pill, toast, modal } from '../core/ui';
+import { adOrGems, spendGems, shopSheet } from '../core/wallet';
+import { Ads } from '../core/ads';
+import { Score, scoreSheet } from '../core/score';
 import { sfx } from '../core/sfx';
 import { t } from '../core/i18n';
 import { Stage, THREE, RoundedBoxGeometry, mat, mesh } from '../core/three';
@@ -20,14 +21,14 @@ const WEAPONS = [
   { n: 'Пістолет', rate: 3, dmg: 1, shots: 1, spread: 0, col: 0xffe27a },
   { n: 'Пістолет-кулемет', rate: 8, dmg: 1, shots: 1, spread: .04, col: 0xffe27a },
   { n: 'Автомат', rate: 8, dmg: 2, shots: 1, spread: .02, col: 0xffc04a },
-  { n: 'Дробовик', rate: 3, dmg: 2, shots: 5, spread: .12, col: 0xffa04a },
+  { n: 'Дробовик', rate: 3, dmg: 2, shots: 5, spread: .06, col: 0xffa04a },
   { n: 'Мініган', rate: 20, dmg: 2, shots: 1, spread: .05, col: 0xff8a3a },
   { n: 'Лазер', rate: 10, dmg: 6, shots: 1, spread: 0, col: 0x6af0ff },
 ];
 const dpsOf = (i: number) => { const w = WEAPONS[i]; return w.rate * w.dmg * w.shots; };
 const BUFFS: Record<string, { n: string; ic: string; col: number; d: number }> = {
   rapid: { n: 'Швидкострільність', ic: '⚡', col: 0xffd23f, d: 8 }, power: { n: 'Подвійна шкода', ic: '💥', col: 0xff5a5a, d: 8 },
-  freeze: { n: 'Заморозка', ic: '❄', col: 0x7fd8ff, d: 5 }, bomb: { n: 'Бомба', ic: '💣', col: 0xff9a3c, d: 0 }, heart: { n: '+1 серце', ic: '♥', col: 0xff7ab2, d: 0 },
+  freeze: { n: 'Сповільнення', ic: '❄', col: 0x7fd8ff, d: 6 }, bomb: { n: 'Бомба', ic: '💣', col: 0xff9a3c, d: 0 }, heart: { n: '+3 бійці', ic: '👥', col: 0x5fb8ff, d: 0 },
 };
 const LANE = 2.4, XMIN = -3.4, XMAX = 3.4, FAR = -34, WORLD = 2.2, MAXE = 220, MAXA = 40, MAXB = 700;
 interface En { x: number; z: number; hp: number; max: number; sp: number; ph: number; hit: number; big: boolean }
@@ -61,9 +62,15 @@ const Defense: Game & Record<string, any> = {
     st.resize();
     st.onFrame = (dt: number) => this.frame(dt);
     this.bind(); this.reset(); this.state = 'ready';
-    setTools([['i:restart', () => { Score.lose(); this.reset(); this.state = 'ready'; }]]);
+    this.tools();
   },
   stop() { this.st?.dispose(); },
+  /** buffs for an ad (then crystals for a while) */
+  tools() {
+    const buy = (k: string, name: string, desc: string) => () => adOrGems('df_' + k, name, desc, 10, 3, () => { this.buffs[k] = this.t + 15; toast(`${BUFFS[k].ic} ${t(BUFFS[k].n)}`); this.buffHud(); });
+    setTools([['i:bolt', buy('rapid', 'Швидкострільність', '×2 швидкість стрільби на 15 с.')], ['i:boom', buy('power', 'Подвійна шкода', '×2 шкоди на 15 с.')], ['i:snow', buy('freeze', 'Сповільнення', 'Зомбі йдуть удвічі повільніше 15 с.')],
+      ['i:restart', () => { Score.lose(); this.reset(); this.state = 'ready'; }]]);
+  },
   build() {
     const sc = this.st.scene;
     this.water = waterTex();
@@ -96,14 +103,14 @@ const Defense: Game & Record<string, any> = {
     if (this.player) sc.remove(this.player); if (this.boss) sc.remove(this.boss.o);
     this.ens = [] as En[]; this.boxes = [] as Box[]; this.pluses = [] as Plus[]; this.drops = [] as Drop[]; this.boss = null;
     this.bx = []; this.bz = []; this.bvx = []; this.bdm = [];
-    this.x = 0; this.tx = 0; this.wpn = 0; this.allies = 0; this.cool = 0; this.scool = 0; this.t = 0; this.kills = 0; this.hp = 3; this.cont = false; this.bosses = 0;
+    this.x = 0; this.tx = 0; this.wpn = 0; this.allies = 0; this.cool = 0; this.scool = 0; this.t = 0; this.kills = 0; this.adRev = false; this.gemRev = false; this.bosses = 0;
     this.spawnT = 1; this.boxT = 4; this.plusT = 2; this.bossT = 45; this.buffT = 18; this.buffs = {} as Record<string, number>; this.offered = 0;
     this.player = person('soldier', 0x3d8bff, { helmet: 0x2f7bff }) as Person; this.player.scale.setScalar(1.25); this.player.rotation.y = Math.PI; setGun(this.player, 0); sc.add(this.player);
     (this.el.querySelector('.bossbar') as HTMLElement).hidden = true;
     this.tip(); this.hud();
   },
   tip() { this.el.querySelector('.rtip')?.remove(); const e = document.createElement('div'); e.className = 'rtip'; e.innerHTML = `<b>${t('Торкнись, щоб почати')}</b><br>${t('веди пальцем вліво/вправо')}<br>${t('ліворуч зброя, посередині зомбі, праворуч підкріплення')}`; this.el.appendChild(e); },
-  hud() { setStats(`${pill('☠ ' + this.kills)}${pill('👥 ' + (this.allies + 1))}${hearts(this.hp)}`); },
+  hud() { setStats(`${pill('☠ ' + this.kills)}${pill('👥 ' + (this.allies + 1))}`); },
   bind() {
     const el = this.el; let down = false;
     const toX = (e: PointerEvent) => { const r = el.getBoundingClientRect(); return XMIN + (e.clientX - r.left) / r.width * (XMAX - XMIN); };
@@ -210,29 +217,28 @@ const Defense: Game & Record<string, any> = {
     if ((this.cool -= dt) <= 0) { this.shoot(this.x, 0); this.flash(this.player); sfx('shoot'); this.cool = 1 / rate; }
     if (this.allies) { this.scool += dt * rate * .5 * this.allies; while (this.scool >= 1) { this.scool--; const [ax, az] = this.allyPos(R(this.allies)); this.shoot(ax, az); } }
     // move world objects
-    for (const e of this.ens) { e.z += e.sp * dt * (frozen ? .25 : 1); if (e.hit > 0) e.hit -= dt; }
-    if (this.boss) { const o = this.boss.o; o.position.z += .8 * dt * (frozen ? .25 : 1); animate(o, dt * (frozen ? .25 : 1), .5); }
-    for (const b of this.boxes) b.o.position.z += WORLD * dt; for (const p of this.pluses) p.o.position.z += WORLD * dt;
+    for (const e of this.ens) { e.z += e.sp * dt * (frozen ? .5 : 1); if (e.hit > 0) e.hit -= dt; }
+    if (this.boss) { const o = this.boss.o; o.position.z += .8 * dt * (frozen ? .5 : 1); animate(o, dt * (frozen ? .5 : 1), .5); }
+    for (const b of this.boxes) { b.o.position.z += WORLD * dt; if ((b as any).dirty) { (b as any).dirty = false; setSpriteText(b.tag, String(Math.ceil(b.hp)), '#1b1b1f'); } } for (const p of this.pluses) p.o.position.z += WORLD * dt;
     for (const dr of this.drops) dr.o.position.z += 2.8 * dt;
     this.bullets_(dt);
     this.drawHorde();
-    // zombies reaching the line: they take soldiers first, then hearts
+    // zombies reaching the line kill soldiers; when nobody is left but you, the defence falls
     for (const e of this.ens) if (e.z > -.2 && e.hp > 0) {
       e.hp = 0; e.max = -1; haptic('err'); Score.bad(); this.flashRed();
-      if (this.allies > 0) this.allies = Math.max(0, this.allies - (e.big ? 3 : 1)); else this.hp--;
-      if (this.hp <= 0) return this.over();
+      if (this.allies > 0) this.allies = Math.max(0, this.allies - (e.big ? 3 : 1)); else return this.over();
     }
-    if (this.boss && this.boss.o.position.z > -.6) { this.hp = 0; return this.over(); }
+    if (this.boss && this.boss.o.position.z > -.6) return this.over();
     this.ens = this.ens.filter((e: En) => e.hp > 0);
     // boxes / plus gates / drops reaching the squad
     for (const b of [...this.boxes]) if (b.o.position.z > 2) { sc.remove(b.o); this.boxes.splice(this.boxes.indexOf(b), 1); this.offered = this.maxOffered(); }
     for (const p of [...this.pluses]) {
-      if (p.dirty && T - p.last > .12) { p.last = T; this.plusTex(p); }
+      if (p.dirty) { p.last = T; this.plusTex(p); }
       if (p.o.position.z > -.3) {
         sc.remove(p.o); this.pluses.splice(this.pluses.indexOf(p), 1);
         if (Math.abs(this.x - LANE) < 1.3) {
           const before = this.allies; this.allies = Math.max(0, Math.min(MAXA, this.allies + p.v));
-          if (p.v > 0) { haptic('ok'); Score.good(5 + p.v * 2); toast(t('+{0} бійців', this.allies - before)); } else if (p.v < 0) { haptic('err'); Score.bad(); toast(t('−{0} бійців', before - this.allies)); if (before === 0) { this.hp--; if (this.hp <= 0) return this.over(); } }
+          if (p.v > 0) { haptic('ok'); Score.good(5 + p.v * 2); toast(t('+{0} бійців', this.allies - before)); } else if (p.v < 0) { haptic('err'); Score.bad(); toast(t('−{0} бійців', before - this.allies)); }
         }
       }
     }
@@ -252,7 +258,7 @@ const Defense: Game & Record<string, any> = {
       bz[i] -= 34 * dt; bx[i] += this.bvx[i] * dt; let hit = false; const x = bx[i], z = bz[i], dm = this.bdm[i];
       for (let k = Math.floor(z - .5); k <= Math.floor(z + .5) && !hit; k++) for (const e of bk.get(k) || []) if (e.hp > 0 && Math.abs(e.x - x) < (e.big ? .5 : .36) && Math.abs(e.z - z) < .45) { e.hp -= dm; e.hit = .06; hit = true; if (e.hp <= 0) this.kill(e); break; }
       if (!hit && this.boss && Math.abs(x) < 1.1 && Math.abs(this.boss.o.position.z - z) < .8) { this.boss.hp -= dm; hit = true; this.bossHitT = .06; if (this.boss.hp <= 0) this.killBoss(); else if (Math.random() < .3) this.bossBar(); }
-      if (!hit) for (const b of this.boxes) if (b.hp > 0 && Math.abs(b.o.position.x - x) < 1 && Math.abs(b.o.position.z - z) < 1.5) { b.hp = Math.max(0, b.hp - dm); hit = true; if (Math.random() < .35 || !b.hp) setSpriteText(b.tag, String(Math.ceil(b.hp)), '#1b1b1f'); if (!b.hp) this.openBox(b); break; }
+      if (!hit) for (const b of this.boxes) if (b.hp > 0 && Math.abs(b.o.position.x - x) < 1 && Math.abs(b.o.position.z - z) < 1.5) { b.hp = Math.max(0, b.hp - dm); hit = true; (b as any).dirty = true; if (!b.hp) this.openBox(b); break; }
       if (!hit) for (const p of this.pluses) if (Math.abs(p.o.position.x - x) < 1.05 && Math.abs(p.o.position.z - z) < .3) { p.acc += dm; const step = Math.max(1, WEAPONS[this.wpn].dmg * 2); while (p.acc >= step && p.v < 30) { p.acc -= step; p.v++; p.dirty = true; } hit = true; break; }
       if (!hit && z > FAR - 2) keep.push(i);
     }
@@ -264,7 +270,7 @@ const Defense: Game & Record<string, any> = {
   },
   drawHorde() {
     const h: CrowdMesh = this.horde, T = this.t; h.count = this.ens.length;
-    this.ens.forEach((e: En, i: number) => { h.pose(i, e.x, Math.abs(Math.sin(T * 7 + e.ph)) * .06, e.z, Math.sin(T * 2 + e.ph) * .2, e.big ? 1.35 : .95, .12); h.color(i, e.hit > 0 ? 0xffffff : e.big ? 0x7a1f2f : 0xc83a3a); });
+    this.ens.forEach((e: En, i: number) => { h.pose(i, e.x, Math.abs(Math.sin(T * 7 + e.ph)) * .06, e.z, (this.state === 'push' ? Math.PI : 0) + Math.sin(T * 2 + e.ph) * .2, e.big ? 1.35 : .95, .12); h.color(i, e.hit > 0 ? 0xffffff : e.big ? 0x7a1f2f : 0xc83a3a); });
     h.commit();
   },
   kill(e: En) {
@@ -294,7 +300,7 @@ const Defense: Game & Record<string, any> = {
       Score.good(30); toast(t('Нова зброя: {0}', t(WEAPONS[this.wpn].n)));
     } else {
       const b = BUFFS[dr.buff!]; Score.good(10); toast(`${b.ic} ${t(b.n)}`);
-      if (dr.buff === 'heart') this.hp = Math.min(5, this.hp + 1);
+      if (dr.buff === 'heart') this.allies = Math.min(MAXA, this.allies + 3);
       else if (dr.buff === 'bomb') { for (const e of this.ens) if (e.z > -20) { e.hp = 0; this.kill(e); poof(this.st.scene, this.st, e.x, .6, e.z, 0xff9a3c, 3, .14); } this.ens = this.ens.filter((e: En) => e.hp > 0); this.flashRed(true); }
       else this.buffs[dr.buff!] = this.t + b.d;
     }
@@ -306,10 +312,22 @@ const Defense: Game & Record<string, any> = {
   },
   flashRed(boom = false) { this.el.classList.remove('hurt', 'boom'); void this.el.offsetWidth; this.el.classList.add(boom ? 'boom' : 'hurt'); },
   over() {
-    this.state = 'over';
+    this.state = 'over'; haptic('err');
     if (this.kills > this.best) { this.best = this.kills; store.set('df_best', this.best); }
-    const revive = () => { this.cont = true; this.hp = 2; this.ens = []; if (this.boss) { this.st.scene.remove(this.boss.o); this.boss = null; (this.el.querySelector('.bossbar') as HTMLElement).hidden = true; this.bossT = 30; } this.state = 'run'; this.hud(); };
-    gameOver(t('Оборону прорвано'), `<p>${t('Вбито:')} <b>${this.kills}</b> ${t('· рекорд {0}', this.best)}</p><p class="muted">${t('Зброя: {0}', t(WEAPONS[this.wpn].n))}</p>`, this.cont ? null : revive, () => { this.reset(); this.state = 'ready'; });
+    const info = `<p>${t('Вбито:')} <b>${this.kills}</b> ${t('· рекорд {0}', this.best)}</p>`;
+    const finish = () => scoreSheet(t('Оборону прорвано'), '', () => { Score.lose(); this.reset(); this.state = 'ready'; });
+    // 1st time: push the horde back for an ad; 2nd time: revive for crystals; then the run ends
+    if (!this.adRev) return modal(`<h2>${t('Оборону прорвано')}</h2>${info}`, [[t('Реклама: відкинути зомбі'), () => Ads.rewarded(() => { this.adRev = true; this.pushBack(); })], [t('Ні'), finish]]);
+    if (!this.gemRev) return modal(`<h2>${t('Оборону прорвано')}</h2>${info}`, [[t('Відродитись за {0} 💎', 30), () => { if (!spendGems(30)) return shopSheet(); this.gemRev = true; this.pushBack(); }], [t('Ні'), finish]]);
+    modal(`<h2>${t('Оборону прорвано')}</h2>${info}`, [[t('Далі'), finish]]);
+  },
+  /** the zombies turn around and run back to the far end */
+  pushBack() {
+    this.state = 'push'; const from = this.ens.map((e: En) => e.z), to = this.ens.map(() => FAR - 2 - Math.random() * 3), bz = this.boss?.o.position.z;
+    this.st.tween(1300, k => {
+      const q = 1 - (1 - k) ** 2; this.ens.forEach((e: En, i: number) => { e.z = from[i] + (to[i] - from[i]) * q; });
+      if (this.boss) this.boss.o.position.z = bz + (FAR - bz) * q; this.t += .016; this.drawHorde();
+    }).then(() => { this.state = 'run'; this.allies = Math.max(this.allies, 2); this.hud(); });
   },
 };
 export default Defense;

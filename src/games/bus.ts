@@ -5,7 +5,8 @@ import './bus.css';
 import { R, pick, shuffle } from '../core/util';
 import { store } from '../core/store';
 import { haptic } from '../core/platform';
-import { setStats, setTools, modal, pill, flash } from '../core/ui';
+import { setStats, setTools, modal, pill, flash, toast } from '../core/ui';
+import { adOrGems } from '../core/wallet';
 import { Ads } from '../core/ads';
 import { done } from '../core/flow';
 import { Score } from '../core/score';
@@ -23,31 +24,33 @@ interface Grp { c: number; people: number[] }
 
 /** Groups are dealt into columns in an order that is known to be solvable with `cap` platform spots.
  *  `mix` (grows with the level) shuffles that order, so colours get more mixed and wrong taps matter. */
-function generate(W: number, buses: number, k: number, nc: number, mix: number, cap: number) {
-  const seq: number[] = []; let prev = -1;
-  for (let b = 0; b < buses; b++) { let c; do c = R(nc); while (c === prev && nc > 1); prev = c; seq.push(c); }
-  const base: number[] = []; seq.forEach(c => { for (let j = 0; j < k; j++) base.push(c); });
+/** Buses take 1–3 groups (5–15 people). Groups are dealt into columns in an order that is known to be solvable
+ *  with fewer than `cap` platform spots used; `mix` (grows with the level) shuffles it so wrong taps matter. */
+function generate(W: number, buses: number, nc: number, mix: number, cap: number) {
+  const seq: number[] = [], ks: number[] = []; let prev = -1;
+  for (let b = 0; b < buses; b++) { let c; do c = R(nc); while (c === prev && nc > 1); prev = c; seq.push(c); ks.push(1 + R(3)); }
+  const base: number[] = []; seq.forEach((c, b) => { for (let j = 0; j < ks[b]; j++) base.push(c); });
   // playing the groups in this order: how many platform spots does it need at most?
   const need = (o: number[]) => {
     let bi = 0, seats = 0, peak = 0; const hold: number[] = [];
-    const board = () => { for (; ;) { const i = hold.indexOf(seq[bi]); if (bi >= seq.length || i < 0) return; hold.splice(i, 1); if (++seats === k) { bi++; seats = 0; } } };
-    for (const c of o) { if (c === seq[bi]) { if (++seats === k) { bi++; seats = 0; board(); } } else { hold.push(c); peak = Math.max(peak, hold.length); } }
+    const board = () => { for (; ;) { const i = hold.indexOf(seq[bi]); if (bi >= seq.length || i < 0) return; hold.splice(i, 1); if (++seats === ks[bi]) { bi++; seats = 0; } } };
+    for (const c of o) { if (c === seq[bi]) { if (++seats === ks[bi]) { bi++; seats = 0; board(); } } else { hold.push(c); peak = Math.max(peak, hold.length); } }
     return peak;
   };
   let order = base.slice();
-  for (let t = 0; t < 60; t++) {
+  for (let t = 0; t < 80; t++) {
     const o = base.slice();
     for (let i = 0; i < o.length - 1; i++) if (Math.random() < .7) { const j = Math.min(o.length - 1, i + 1 + R(mix)); [o[i], o[j]] = [o[j], o[i]]; }
-    const n = need(o); if (n <= cap && n >= need(order)) { order = o; if (n >= cap - 1) break; }
+    const n = need(o); if (n < cap && n >= need(order)) { order = o; if (n >= cap - 1) break; }
   }
   const cols: number[][] = Array.from({ length: W }, () => []);
   order.forEach(c => cols[R(W)].push(c));              // appending in order keeps every column consistent with it
-  return { seq, cols };
+  return { seq, ks, cols };
 }
 
 /** k=2: minibus with a short nose (10 people), k=3: bus (15), k=4: long bus (20) */
 function busModel(col: string, k: number) {
-  const g = new THREE.Group(), mini = k <= 2, L = mini ? 2.9 : 2.4 + k * .95, body = mat(col, { roughness: .35, metalness: .1 }), glass = mat(0x22364f, { roughness: .1, metalness: .4 });
+  const g = new THREE.Group(), mini = k <= 2, L = mini ? (k === 1 ? 2.3 : 2.9) : 2.4 + k * .95, body = mat(col, { roughness: .35, metalness: .1 }), glass = mat(0x22364f, { roughness: .1, metalness: .4 });
   const dark = mat(new THREE.Color(col).multiplyScalar(.7)), white = mat(0xffffff);
   const add = (m: THREE.Mesh, x: number, y: number, z = 0) => { m.position.set(x, y, z); g.add(m); return m; };
   if (mini) {
@@ -101,8 +104,8 @@ const Bus: Game & Record<string, any> = {
     for (const o of this.temp || []) sc.remove(o); this.temp = [];
     this.crowd?.dispose(sc); this.bus && sc.remove(this.bus); (this.waiting || []).forEach((w: THREE.Object3D) => sc.remove(w)); this.waiting = [];
     const L = this.lvl = store.get('bj_lvl', 1);
-    this.W = Math.min(6, 4 + Math.floor(L / 3)); this.k = L < 3 ? 2 : L < 7 ? 3 : 4;
-    const g = generate(this.W, 7 + L, this.k, Math.min(6, 3 + Math.floor(L / 2)), L < 3 ? 2 : Math.min(12, L + 1), L < 3 ? 3 : L < 6 ? 4 : 5);
+    this.W = Math.min(6, 4 + Math.floor(L / 3));
+    const g = generate(this.W, 8 + L, Math.min(6, 3 + Math.floor(L / 2)), L < 3 ? 2 : Math.min(12, L + 1), L < 3 ? 4 : 5); this.ks = g.ks; this.k = g.ks[0];
     this.buses = g.seq; this.bi = 0; this.seats = 0; this.seated = 0; this.ready = false; this.over = false; this.cont = false; this.cap = HOLD;
     this.hold = [] as ({ g: Grp; here: boolean } | null)[];
     const total = g.cols.reduce((s, c) => s + c.length, 0) * 5;
@@ -116,22 +119,23 @@ const Bus: Game & Record<string, any> = {
     for (let i = 0; i < HOLD + 2; i++) { const s = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.1).rotateX(-Math.PI / 2), this.slotM); s.position.set(this.slotX(i), .19, PLAT + .1); s.visible = i < this.cap; sc.add(s); this.temp.push(s); }
     for (let c = 0; c < this.W; c++) { const l = mesh(new THREE.PlaneGeometry(1.1, 40).rotateX(-Math.PI / 2), mat(0xbfb6a2, { roughness: 1 }), false); l.position.set(this.colX(c), .01, FRONT + 20 - .6); sc.add(l); this.temp.push(l); }
     this.frameCam(); this.arrive(); this.hud();
-    setTools([['i:restart', () => { Score.lose(); this.load(); }]]);
+    this.tools();
   },
   colX(c: number) { return (c - (this.W - 1) / 2) * CELL; },
   cellPos(c: number, k: number): [number, number] { return [this.colX(c), FRONT + k * CELL]; },
   slotX(i: number) { return (i - (HOLD - 1) / 2) * SLOTW; },
   hud() {
     setStats(`${pill('Рів. ' + this.lvl)}${pill(t('Бус {0}/{1}', Math.min(this.bi + 1, this.buses.length), this.buses.length))}`);
-    const q = this.el.querySelector('.nextq'); if (q) q.innerHTML = `<span>${t('Далі:')}</span>` + this.buses.slice(this.bi + 1, this.bi + 5).map((b: number) => `<i>${busSVG(COLS[b], this.k, [])}</i>`).join('');
+    const q = this.el.querySelector('.nextq'); if (q) q.innerHTML = `<span>${t('Далі:')}</span>` + this.buses.slice(this.bi + 1, this.bi + 5).map((b: number, j: number) => `<i>${busSVG(COLS[b], this.ks[this.bi + 1 + j], [])}</i>`).join('');
   },
   // ---------- buses ----------
   arrive() {
     const sc = this.st.scene, c = this.buses[this.bi]; if (c == null) return;
     // the next buses wait in a line on the road to the left and roll up one by one
     this.waiting ||= [];
+    this.k = this.ks[this.bi];
     const b = this.bus = this.waiting.shift() || busModel(COLS[c], this.k); if (!b.parent) { b.position.set(-16, 0, ROADZ); sc.add(b); }
-    for (let j = this.waiting.length; j < 2; j++) { const nb = this.buses[this.bi + 1 + j]; if (nb == null) break; const w = busModel(COLS[nb], this.k); w.position.set(-30 - j * 6, 0, ROADZ); sc.add(w); this.waiting.push(w); }
+    for (let j = this.waiting.length; j < 2; j++) { const nb = this.buses[this.bi + 1 + j]; if (nb == null) break; const w = busModel(COLS[nb], this.ks[this.bi + 1 + j]); w.position.set(-30 - j * 6, 0, ROADZ); sc.add(w); this.waiting.push(w); }
     this.waiting.forEach((w: THREE.Object3D, j: number) => { const x0 = w.position.x, x1 = -10.5 - j * (w.userData.L + .6); this.st.tween(1400, k => { w.position.x = x0 + (x1 - x0) * ease.inOut(k); }); });
     this.tag = numberSprite(`0/${this.k * 5}`, '#1b1b1f', 1.3); this.tag.position.set(0, 2.4, 0); b.add(this.tag);
     this.seats = 0; this.seated = 0; this.ready = false;
@@ -197,13 +201,25 @@ const Bus: Game & Record<string, any> = {
   checkFail() {
     if (this.over || !this.ready) return;
     const used = this.hold.filter(Boolean), c = this.buses[this.bi];
+    // the waiting spots are full and nobody there fits the bus at the stop → you lose
     if (used.length < this.cap || used.some((h: any) => !h.here || h.g.c === c)) return;
-    if (this.cols.some((col: Grp[]) => col.length && col[0].c === c)) return;
-    this.over = true; haptic('err');
-    const b: any[] = [];
-    if (!this.cont) b.push(['Реклама: +1 місце на платформі', () => Ads.rewarded(() => { this.cont = true; this.over = false; this.cap++; this.temp[this.cap - 1].visible = true; })]);
-    b.push(['Почати заново', () => { Score.lose(); this.load(); }]);
-    setTimeout(() => modal(`<h2>${t('Платформа переповнена')}</h2><p class="muted">${t('Усі місця очікування зайняті.')}</p>`, b), 300);
+    this.over = true; haptic('err'); Score.bad();
+    const b: any[] = [[t('Реклама: перемішати людей'), () => Ads.rewarded(() => this.mix())]];
+    if (this.cap < HOLD + 2) b.push([t('Реклама: +1 місце'), () => Ads.rewarded(() => this.addSlot())]);
+    b.push([t('Почати заново'), () => { Score.lose(); this.load(); }]);
+    setTimeout(() => modal(`<h2>${t('Програш!')}</h2><p class="muted">${t('Усі місця очікування зайняті, і ніхто з них не підходить до автобуса.')}</p>`, b), 300);
+  },
+  /** colours of all waiting groups are shuffled (columns + platform) */
+  mix() {
+    const gs: Grp[] = [...this.cols.flat(), ...this.hold.filter((h: any) => h && h.here).map((h: any) => h.g)];
+    const cs = shuffle(gs.map(g => g.c)); gs.forEach((g, i) => { g.c = cs[i]; g.people.forEach(p => this.crowd.color(p, COLS[g.c])); });
+    this.over = false; haptic('ok'); this.hud(); if (this.ready) this.autoBoard();
+  },
+  addSlot() { if (this.cap >= HOLD + 2) return; this.cap++; this.temp[this.cap - 1].visible = true; this.over = false; this.tools(); if (this.ready) this.autoBoard(); },
+  tools() {
+    setTools([['i:shuffle', () => adOrGems('bus_mix', 'Перемішати людей', 'Кольори людей у чергах і на платформі перемішаються.', 15, 30, () => this.mix()), false, '+'],
+      ['i:nest', () => this.cap >= HOLD + 2 ? toast(t('Максимум місць')) : adOrGems('bus_slot', '+1 місце', 'Ще одне місце очікування до кінця рівня.', 20, 30, () => this.addSlot()), false, '+'],
+      ['i:restart', () => { Score.lose(); this.load(); }]]);
   },
   frame(dt: number) {
     if (!this.crowd) return;

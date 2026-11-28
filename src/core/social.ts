@@ -1,6 +1,6 @@
 // First-launch onboarding (language → nickname), profile sheet and leaderboard sheet.
 import { $, $$ } from './util';
-import { modal, closeModal, toast } from './ui';
+import { modal, closeModal, toast, dismissable } from './ui';
 import { LANGS, setLang, t, hasLang } from './i18n';
 import { online, nickCheck, nickFree, setNick, myNick, top, profile, localTotal, loginWithTelegram, tgLinked, TELEGRAM_BOT } from './net';
 import { store } from './store';
@@ -15,6 +15,7 @@ const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt
 
 export function languageSheet(then?: () => void) {
   modal(`<h2>${t('Обери мову')}</h2><div class="langs">${LANGS.map(([c, n]) => `<button class="btn ghost" data-l="${c}">${n}</button>`).join('')}</div>`);
+  if (hasLang()) dismissable();
   $$('#modal [data-l]').forEach(b => b.onclick = () => { setLang(b.dataset.l!); closeModal(); then?.(); });
 }
 
@@ -52,6 +53,7 @@ export function onboarding(done: () => void) {
 export async function profileSheet() {
   modal(`<h2>${t('Профіль')}</h2><p><b>${esc(myNick() || t('Гравець'))}</b></p><p class="muted" id="pinfo"></p>
     <div class="btns"><button class="btn" id="pnick">${t('Змінити нікнейм')}</button><button class="btn ghost" id="plang">${t('Мова')}</button><button class="btn ghost" id="psnd">${t(isMuted() ? 'Звук: вимкнено' : 'Звук: увімкнено')}</button></div>`);
+  dismissable();
   $('#psnd').onclick = () => { setMuted(!isMuted()); $('#psnd').textContent = t(isMuted() ? 'Звук: вимкнено' : 'Звук: увімкнено'); };
   $('#pnick').onclick = () => nickSheet(); $('#plang').onclick = () => languageSheet(() => location.reload());
   if (online && !TG() && !tgLinked()) {
@@ -68,7 +70,7 @@ export async function profileSheet() {
 
 export async function leaderSheet(game: string, name: string) {
   modal(`<h2>${t('Рейтинг')}: ${t(name)}</h2><div class="lb" id="lb"><p class="muted">${t('Завантаження…')}</p></div>`, [['OK']]);
-  const box = $('#lb');
+  dismissable(); const box = $('#lb');
   if (!online) { box.innerHTML = `<p class="muted">${t('Рейтинг запрацює після підключення сервера.')}</p><p>${t('Очки')}: <b>${localTotal(game).toLocaleString()}</b></p>`; return; }
   if (!myNick()) { box.innerHTML = `<p class="muted">${t('Щоб потрапити в рейтинг, придумай нікнейм.')}</p><button class="btn" id="lbnick">${t('Придумай нікнейм')}</button>`; $('#lbnick').onclick = () => nickSheet(); return; }
   const r = await top(game); if (!box.isConnected) return;

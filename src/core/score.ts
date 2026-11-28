@@ -11,13 +11,16 @@ import { sfx } from './sfx';
 import { Paused, onPause } from './pause';
 onPause(on => { if (!on) Score.since += performance.now() - Paused.since; });
 
-const STEP = 8000, MAXM = 5;
+let STEP = 8000; const MAXM = 5;
+/** how many ms of good play per multiplier step (some games build it slower) */
+export const setStep = (ms: number) => { STEP = ms; };
 const CHEER = ['', '', 'Добре!', 'Чудово!', 'Так тримати!', 'Неймовірно!'];
 let timer: any = 0;
 
 export const Score = {
   game: '', pts: 0, run: 0, best: 0, mult: 1, since: 0, hsShown: false, lastGood: 0, lastTick: 0,
   begin(game: string) {
+    STEP = 8000;
     this.game = game; this.pts = 0; this.run = 0; this.mult = 1; this.hsShown = false; this.since = performance.now();
     this.lastGood = 0; this.lastTick = performance.now(); this.best = game ? localBest(game) : 0; this.hsShown = this.best === 0; this.render(); clearInterval(timer); if (game) timer = setInterval(() => this.tick(), 250);
   },
@@ -25,7 +28,7 @@ export const Score = {
     const now = performance.now(), dt = now - this.lastTick; this.lastTick = now;
     if (Paused.on) return;
     // the multiplier only grows while you keep making good moves (idle > 5 s freezes it)
-    if (now - this.lastGood > 5000) { this.since += dt; this.progress(); return; }
+    if (now - this.lastGood > 6000) { if (this.mult > 1) { this.mult = 1; this.render(); } this.since = now; this.progress(); return; }
     const m = Math.min(MAXM, 1 + Math.floor((performance.now() - this.since) / STEP));
     if (m !== this.mult) { this.mult = m; this.render(); this.bump(); if (m >= 2) cheer(t(CHEER[m])); } else this.progress();
   },
