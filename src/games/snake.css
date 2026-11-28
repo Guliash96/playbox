@@ -1,7 +1,7 @@
 #game.th-snake{background:radial-gradient(circle at 50% 30%,#ffe7f1,#ffc2d8 60%,#f59ac0)}
 #game.th-snake::before{content:"";position:absolute;inset:0;z-index:-1;background:conic-gradient(rgba(255,255,255,.18) 25%,transparent 0 50%,rgba(255,255,255,.18) 0 75%,transparent 0) 0 0/40px 40px}
 .sx{display:flex;flex-direction:column;align-items:center;gap:10px}
-.px{position:relative;background:#2b2350;border-radius:22px;border:3px solid #1b1b1f;box-shadow:0 12px 24px rgba(120,30,70,.35)}
+.px{box-sizing:content-box;position:relative;background:#2b2350;border-radius:22px;border:3px solid #1b1b1f;box-shadow:0 12px 24px rgba(120,30,70,.35)}
 .px.shake{animation:shake .3s}
 .belt{position:absolute;inset:0;width:100%;height:100%}
 .beltdash{animation:belt 1s linear infinite}

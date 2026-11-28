@@ -43,7 +43,7 @@ const Snake: Game & Record<string, any> = {
     this.g = pic.flatMap(row => [...row].map(ch => ch === '.' ? null : ch));
     const count: Record<string, number> = {}; this.g.forEach((c: string) => c && (count[c] = (count[c] || 0) + 1));
     this.jit = this.g.map(() => (Math.random() - .5) * .14);   // tiny shade variation per brick, like a real mosaic
-    const tot = this.g.filter(Boolean).length, lo = Math.max(5, Math.round(tot / 30)), hi = Math.round(lo * 1.9), all: Sn[] = [];
+    const tot = this.g.filter(Boolean).length, lo = Math.max(5, Math.round(tot / 40)), hi = Math.round(lo * 1.9), all: Sn[] = [];
     for (const c in count) { let left = count[c]; while (left > 0) { const n = Math.min(left, lo + R(hi - lo + 1)); all.push({ c, n }); left -= n; } }
     this.lanes = Array.from({ length: L < 4 ? 3 : L < 10 ? 4 : 5 }, () => [] as Sn[]);
     shuffle(all).forEach((s, i) => this.lanes[i % this.lanes.length].push(s));
