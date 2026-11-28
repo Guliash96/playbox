@@ -5,7 +5,7 @@ import * as CFG from '../config';
 import { TG } from './platform';
 const { SUPABASE_URL, SUPABASE_ANON_KEY } = CFG;
 export const TELEGRAM_BOT: string = (CFG as any).TELEGRAM_BOT || 'playboxoff_bot';
-import { store } from './store';
+import { store, setDirtyHook, isMax } from './store';
 
 export const online = !!(SUPABASE_URL && SUPABASE_ANON_KEY);
 let sb: SupabaseClient | null = null, ready: Promise<boolean> | null = null;
@@ -31,7 +31,7 @@ async function tgAuth(payload: Record<string, unknown>, anonToken?: string) {
     if (error || !data?.access_token) { console.warn('tg-auth', error || data); return false; }
     await client().auth.setSession({ access_token: data.access_token, refresh_token: data.refresh_token });
     const { data: p } = await client().rpc('my_profile'); if (p?.[0]?.nick) store.set('nick', p[0].nick);
-    store.set('tgLinked', true); document.dispatchEvent(new Event('nick'));
+    store.set('tgLinked', true); document.dispatchEvent(new Event('nick')); setTimeout(() => syncSave(), 0);
     return true;
   } catch (e) { console.warn('tg-auth', e); return false; }
 }
@@ -128,3 +128,35 @@ export async function top(game: string): Promise<{ rows: { nick: string; points:
   if (a.error) return null;
   return { rows: (a.data || []).map((r: any) => ({ nick: r.nick, points: Number(r.points), me: r.me })), rank: b.data?.[0]?.rank ? Number(b.data[0].rank) : null };
 }
+
+// ---------- cloud save: progress follows the account (Telegram / browser / any device) ----------
+let syncing = false, syncT: any = 0;
+const maxMerge = (a: any, b: any): any => {
+  if (typeof a === 'number' && typeof b === 'number') return Math.max(a, b);
+  if (a && b && typeof a === 'object' && typeof b === 'object') { const o: any = { ...a }; for (const k in b) o[k] = k in o ? maxMerge(o[k], b[k]) : b[k]; return o; }
+  return b ?? a;
+};
+export async function syncSave() {
+  if (syncing || !online) return; syncing = true;
+  try {
+    if (!(await ensure())) return;
+    const { data, error } = await client().rpc('get_save'); if (error) throw error;
+    const srv = data?.[0] || { data: {}, ts: {} }, sd = srv.data || {}, st = srv.ts || {};
+    const lt = store.get<Record<string, number>>('_ts', {}), out: Record<string, unknown> = {}, ots: Record<string, number> = {};
+    let changed = false;
+    for (const k of new Set([...store.syncKeys(), ...Object.keys(sd)])) {
+      const local = store.get<any>(k, undefined), has = local !== undefined, remote = sd[k];
+      let v: any;
+      if (!(k in sd)) v = local;
+      else if (!has) v = remote;
+      else if (isMax(k)) v = maxMerge(local, remote);
+      else v = (lt[k] || 0) >= (st[k] || 0) ? local : remote;
+      out[k] = v; ots[k] = Math.max(lt[k] || 0, st[k] || 0);
+      if (JSON.stringify(v) !== JSON.stringify(local)) { store.raw(k, v); changed = true; }
+    }
+    store.raw('_ts', ots);
+    await client().rpc('put_save', { d: out, t: ots });
+    if (changed) { document.dispatchEvent(new Event('gems')); document.dispatchEvent(new Event('synced')); }
+  } catch (e) { console.warn('sync', e); } finally { syncing = false; }
+}
+setDirtyHook(() => { clearTimeout(syncT); syncT = setTimeout(() => syncSave(), 4000); });
