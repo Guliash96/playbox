@@ -12,8 +12,9 @@ import { extraTool } from './core/ui';
 import { Score } from './core/score';
 import { flush } from './core/net';
 import { ICON } from './core/ui';
-import { settingsMenu, menuExtra } from './core/settings';
+import { menuExtra } from './core/settings';
 import { bugReport, consentSheet } from './core/report';
+import { pauseSheet, resume } from './core/pause';
 
 let cur: Game | null = null, seq = 0;
 const home = () => { location.hash = ''; };
@@ -21,7 +22,7 @@ const home = () => { location.hash = ''; };
 async function route() {
   const id = location.hash.slice(1), info = GAMES.find(g => g.id === id && g.load);
   const my = ++seq;
-  closeModal(); cur?.stop?.(); cur = null; if (Score.pts > 0) Score.commit(); Score.stop(); menuExtra.items = []; menuExtra.highlight = false;
+  closeModal(); cur?.stop?.(); cur = null; if (Score.pts > 0) Score.commit(); Score.stop(); menuExtra.items = []; menuExtra.highlight = false; resume();
   const game = $('#game');
   if (!info) {
     game.hidden = true; game.className = ''; $('#hub').hidden = false; renderHub(); setBackButton(false); return;
@@ -38,7 +39,9 @@ async function route() {
 initPlatform(home);
 $('#back').onclick = home;
 $('#bug').innerHTML = ICON.bug; $('#bug').onclick = () => bugReport();
-$('#menu').innerHTML = ICON.menu; $('#menu').onclick = () => settingsMenu();
+$('#pause').innerHTML = ICON.pause; $('#pause').onclick = () => pauseSheet();
+// leaving the app / switching tabs pauses the game
+document.addEventListener('visibilitychange', () => { if (document.hidden && location.hash && !document.querySelector('#modal:not([hidden])')) pauseSheet(); });
 addEventListener('hashchange', route);
 renderAdBar();
 startAutoTranslate();

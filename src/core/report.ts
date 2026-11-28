@@ -6,6 +6,7 @@ import { store } from './store';
 import { t, lang } from './i18n';
 import { platform } from './platform';
 import { reportBug, myNick } from './net';
+import { pause, resume, Paused } from './pause';
 
 // keep the last errors so reports carry them
 const errs: string[] = [];
@@ -21,13 +22,14 @@ async function screenshot(): Promise<string | null> {
 }
 
 export async function bugReport() {
+  const was = Paused.on; pause(); const done = () => { closeModal(); if (!was) resume(); };
   const shot = await screenshot();          // before the sheet covers the screen
   modal(`<h2>${t('Повідомити про помилку')}</h2>
     ${shot ? `<img class="bugshot" src="${shot}" alt="">` : ''}
     <label class="chk"><input type="checkbox" id="bshot" ${shot ? 'checked' : 'disabled'}> ${t('Додати скріншот')}</label>
     <textarea id="btxt" class="inp" rows="4" maxlength="2000" placeholder="${t('Що сталося? Що ти робив перед цим?')}"></textarea>
     <div class="btns"><button class="btn" id="bsend">${t('Надіслати')}</button><button class="btn ghost" id="bx">${t('Скасувати')}</button></div>`);
-  $('#bx').onclick = closeModal;
+  $('#bx').onclick = done;
   $('#bsend').onclick = async () => {
     const txt = ($('#btxt') as HTMLTextAreaElement).value.trim(), b = $('#bsend') as HTMLButtonElement;
     if (!txt) { ($('#btxt') as HTMLElement).focus(); return; }
@@ -35,7 +37,7 @@ export async function bugReport() {
     const meta = { game: location.hash.slice(1) || 'hub', lang, platform: platform(), ua: navigator.userAgent, w: innerWidth, h: innerHeight, nick: myNick(), errors: errs.slice(), progress: Object.fromEntries(Object.keys(localStorage).filter(k => /_lvl$/.test(k)).map(k => [k.replace('pb2_', ''), localStorage.getItem(k)])) };
     const ok = await reportBug(txt, ($('#bshot') as HTMLInputElement).checked ? shot : null, meta);
     b.disabled = false;
-    if (ok) { closeModal(); toast(t('Дякуємо! Звіт надіслано')); } else toast(t('Немає зв\'язку з сервером'));
+    if (ok) { done(); toast(t('Дякуємо! Звіт надіслано')); } else toast(t('Немає зв\'язку з сервером'));
   };
 }
 

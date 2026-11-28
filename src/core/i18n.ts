@@ -10,6 +10,7 @@ export const LANGS = [
 const ORDER = ['uk', 'en', 'ru', 'es', 'pt', 'de', 'fr', 'tr', 'pl'];
 
 const TABLE = `
+Пауза|Pause|Пауза|Pausa|Pausa|Pause|Pause|Duraklat|Pauza
 Добре!|Good!|Хорошо!|¡Bien!|Boa!|Gut!|Bien !|İyi!|Dobrze!
 Чудово!|Great!|Отлично!|¡Genial!|Ótimo!|Super!|Super !|Harika!|Świetnie!
 Так тримати!|Keep it up!|Так держать!|¡Sigue así!|Continue assim!|Weiter so!|Continue !|Böyle devam!|Tak trzymaj!

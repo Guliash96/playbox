@@ -29,6 +29,7 @@ export const ICON: Record<string, string> = {
   undo: S('<path d="M9 5L4 10l5 5" fill="none" stroke="#1b1b1f" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 10H14a6 6 0 0 1 0 12h-3" fill="none" stroke="#1b1b1f" stroke-width="2.8" stroke-linecap="round"/>'),
   restart: S('<path d="M20 12a8 8 0 1 1-2.4-5.7" fill="none" stroke="#1b1b1f" stroke-width="2.6" stroke-linecap="round"/><path d="M20 3v5h-5" fill="none" stroke="#1b1b1f" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>'),
   cup: S('<path d="M7 3h10v3h3v2a5 5 0 0 1-4.3 5A5 5 0 0 1 13 15.7V18h3v3H8v-3h3v-2.3A5 5 0 0 1 8.3 13 5 5 0 0 1 4 8V6h3z" fill="#ffc533" stroke="#1b1b1f" stroke-width="1.8" stroke-linejoin="round"/>'),
+  pause: S('<rect x="6" y="5" width="4" height="14" rx="1.5" fill="#1b1b1f"/><rect x="14" y="5" width="4" height="14" rx="1.5" fill="#1b1b1f"/>'),
   menu: S('<path d="M6 8h12M6 12h12M6 16h12" stroke="#1b1b1f" stroke-width="2.6" stroke-linecap="round"/>'),
   bug: S('<path d="M12 3L22 20H2z" fill="#ff3d4f" stroke="#1b1b1f" stroke-width="2" stroke-linejoin="round"/><path d="M12 9v5" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="17" r="1.4" fill="#fff"/>'),
   ad: S('<rect x="3" y="5" width="18" height="14" rx="3" fill="#7fd1ff" stroke="#1b1b1f" stroke-width="2"/><path d="M10 9l5 3-5 3z" fill="#1b1b1f"/>'),

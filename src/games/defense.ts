@@ -130,7 +130,8 @@ const Defense: Game & Record<string, any> = {
   },
   bossBar() { const b = this.boss, bar = this.el.querySelector('.bossbar') as HTMLElement; if (!b) return; bar.querySelector('b')!.textContent = String(Math.max(0, Math.ceil(b.hp))); (bar.querySelector('i') as HTMLElement).style.width = Math.max(0, b.hp / b.max * 100) + '%'; },
   spawnBox() {
-    const tier = Math.max(this.wpn, this.offered) + 1; if (tier >= WEAPONS.length) return; this.offered = tier;
+    const tier = Math.max(this.wpn, this.offered, ...this.boxes.map((b: Box) => b.tier), ...this.drops.filter((d: Drop) => d.tier != null).map((d: Drop) => d.tier!)) + 1;
+    if (tier >= WEAPONS.length) return; this.offered = tier;
     const g = new THREE.Group(), hp = Math.round(30 * Math.pow(2.5, tier - 1) * (1 + this.t / 150) * (1 + this.allies * .25));
     const body = mesh(new RoundedBoxGeometry(1.9, 1.5, 3, 2, .06), mat(0xd9962b, { roughness: .55, metalness: .3 })); body.position.y = .75; g.add(body);
     for (let i = 0; i < 9; i++) { const r = mesh(new THREE.BoxGeometry(1.94, 1.36, .08), mat(0xb8781c, { roughness: .5, metalness: .3 })); r.position.set(0, .75, -1.35 + i * .34); g.add(r); }
@@ -178,8 +179,10 @@ const Defense: Game & Record<string, any> = {
     return tx == null ? 0 : Math.max(-.12, Math.min(.12, (tx - x) / Math.max(1, z - tz)));
   },
   flash(s: Person) {
-    if (!this.mf) { this.mf = new THREE.Sprite(new THREE.SpriteMaterial({ color: 0xffe27a, transparent: true, opacity: .9, depthWrite: false })); this.mf.scale.set(.5, .5, 1); this.st.scene.add(this.mf); }
-    const p = new THREE.Vector3(); (s.getObjectByName('gun') || s).getWorldPosition(p); this.mf.position.set(p.x, p.y + .05, p.z - .9); this.mf.visible = true; clearTimeout(this.mft); this.mft = setTimeout(() => { if (this.mf) this.mf.visible = false; }, 45);
+    if (!this.mf) { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d')!, g = x.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, 'rgba(255,255,220,1)'); g.addColorStop(.35, 'rgba(255,200,80,.8)'); g.addColorStop(1, 'rgba(255,140,0,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); this.mf = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); this.st.scene.add(this.mf); }
+    if (WEAPONS[this.wpn].rate > 8 && Math.random() < .5) return;
+    this.mf.scale.setScalar(.35 + Math.random() * .25);
+    const p = new THREE.Vector3(); (s.getObjectByName('gun') || s).getWorldPosition(p); this.mf.position.set(p.x, p.y + .05, p.z - .9); this.mf.visible = true; clearTimeout(this.mft); this.mft = setTimeout(() => { if (this.mf) this.mf.visible = false; }, 30);
   },
   allyPos(i: number): [number, number] { const row = Math.floor(i / 5) + 1, col = i % 5 - 2; return [Math.max(XMIN + .2, Math.min(XMAX - .2, this.x + col * .55 + (row % 2) * .27)), .2 + row * .55]; },
   // ---------- frame ----------
@@ -222,7 +225,7 @@ const Defense: Game & Record<string, any> = {
     if (this.boss && this.boss.o.position.z > -.6) { this.hp = 0; return this.over(); }
     this.ens = this.ens.filter((e: En) => e.hp > 0);
     // boxes / plus gates / drops reaching the squad
-    for (const b of [...this.boxes]) if (b.o.position.z > 2) { sc.remove(b.o); this.boxes.splice(this.boxes.indexOf(b), 1); if (this.offered === b.tier) this.offered = this.wpn; }
+    for (const b of [...this.boxes]) if (b.o.position.z > 2) { sc.remove(b.o); this.boxes.splice(this.boxes.indexOf(b), 1); this.offered = this.maxOffered(); }
     for (const p of [...this.pluses]) {
       if (p.dirty && T - p.last > .12) { p.last = T; this.plusTex(p); }
       if (p.o.position.z > -.3) {
@@ -236,7 +239,7 @@ const Defense: Game & Record<string, any> = {
     for (const dr of [...this.drops]) {
       const near = Math.abs(this.x - dr.x) < 1.3;
       if (dr.o.position.z > -.5 && near) this.pickup(dr);
-      else if (dr.o.position.z > 1.8) { sc.remove(dr.o); this.drops.splice(this.drops.indexOf(dr), 1); if (dr.tier != null) { toast(t('Зброю пропущено')); Score.bad(); this.offered = this.wpn; } }
+      else if (dr.o.position.z > 1.8) { sc.remove(dr.o); this.drops.splice(this.drops.indexOf(dr), 1); if (dr.tier != null) { toast(t('Зброю пропущено')); Score.bad(); this.offered = this.maxOffered(); } }
     }
     if ((this.hudT = (this.hudT || 0) + dt) > .25) { this.hudT = 0; this.hud(); this.buffHud(); }
   },
@@ -279,10 +282,15 @@ const Defense: Game & Record<string, any> = {
     const sc = this.st.scene; haptic('ok'); Score.good(20); poof(sc, this.st, b.o.position.x, 1.2, b.o.position.z, 0xffc533, 14, .16);
     sc.remove(b.o); this.boxes.splice(this.boxes.indexOf(b), 1); this.dropItem(-LANE, b.o.position.z, b.tier);
   },
+  /** highest weapon tier already given or on its way — missed lower tiers are not offered again */
+  maxOffered() { return Math.max(this.wpn, ...this.boxes.map((b: Box) => b.tier), ...this.drops.filter((d: Drop) => d.tier != null).map((d: Drop) => d.tier!)); },
   pickup(dr: Drop) {
     this.st.scene.remove(dr.o); this.drops.splice(this.drops.indexOf(dr), 1); haptic('ok');
     if (dr.tier != null) {
-      if (dr.tier > this.wpn) { this.wpn = dr.tier; setGun(this.player, this.wpn); }
+      if (dr.tier > this.wpn) { this.wpn = dr.tier; setGun(this.player, this.wpn); this.offered = Math.max(this.offered, this.wpn); }
+      // older, weaker guns still on the road are no longer useful
+      for (const o of [...this.boxes]) if (o.tier <= this.wpn) { this.st.scene.remove(o.o); this.boxes.splice(this.boxes.indexOf(o), 1); }
+      for (const o of [...this.drops]) if (o.tier != null && o.tier <= this.wpn) { this.st.scene.remove(o.o); this.drops.splice(this.drops.indexOf(o), 1); }
       Score.good(30); toast(t('Нова зброя: {0}', t(WEAPONS[this.wpn].n)));
     } else {
       const b = BUFFS[dr.buff!]; Score.good(10); toast(`${b.ic} ${t(b.n)}`);

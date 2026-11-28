@@ -8,22 +8,28 @@ import { Ads } from './ads';
 import { addPoints, submitBest, localBest } from './net';
 import { t } from './i18n';
 import { sfx } from './sfx';
+import { Paused, onPause } from './pause';
+onPause(on => { if (!on) Score.since += performance.now() - Paused.since; });
 
 const STEP = 8000, MAXM = 5;
 const CHEER = ['', '', 'Добре!', 'Чудово!', 'Так тримати!', 'Неймовірно!'];
 let timer: any = 0;
 
 export const Score = {
-  game: '', pts: 0, run: 0, best: 0, mult: 1, since: 0, hsShown: false,
+  game: '', pts: 0, run: 0, best: 0, mult: 1, since: 0, hsShown: false, lastGood: 0, lastTick: 0,
   begin(game: string) {
     this.game = game; this.pts = 0; this.run = 0; this.mult = 1; this.hsShown = false; this.since = performance.now();
-    this.best = game ? localBest(game) : 0; this.hsShown = this.best === 0; this.render(); clearInterval(timer); if (game) timer = setInterval(() => this.tick(), 250);
+    this.lastGood = 0; this.lastTick = performance.now(); this.best = game ? localBest(game) : 0; this.hsShown = this.best === 0; this.render(); clearInterval(timer); if (game) timer = setInterval(() => this.tick(), 250);
   },
   tick() {
+    const now = performance.now(), dt = now - this.lastTick; this.lastTick = now;
+    if (Paused.on) return;
+    // the multiplier only grows while you keep making good moves (idle > 5 s freezes it)
+    if (now - this.lastGood > 5000) { this.since += dt; this.progress(); return; }
     const m = Math.min(MAXM, 1 + Math.floor((performance.now() - this.since) / STEP));
     if (m !== this.mult) { this.mult = m; this.render(); this.bump(); if (m >= 2) cheer(t(CHEER[m])); } else this.progress();
   },
-  good(base = 10) { const g = Math.round(base * this.mult); this.pts += g; this.check(); this.render(); this.float('+' + g); return g; },
+  good(base = 10) { this.lastGood = performance.now(); const g = Math.round(base * this.mult); this.pts += g; this.check(); this.render(); this.float('+' + g); return g; },
   bad() { if (this.mult > 1) this.float('×1', true); this.mult = 1; this.since = performance.now(); this.render(); },
   add(n: number) { n = Math.round(n); if (n > 0) { this.pts += n; this.check(); this.render(); } },
   /** round finished: its points (× bonus) move into the current total */

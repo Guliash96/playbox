@@ -1,5 +1,6 @@
 // Shared three.js stage for the 3D games: renderer, camera, lights, resize, render loop, tweens, picking.
 import * as THREE from 'three';
+import { Paused } from './pause';
 export { THREE };
 export { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 
@@ -32,6 +33,7 @@ export class Stage {
     const loop = (ts: number) => {
       this.raf = requestAnimationFrame(loop);
       const dt = Math.min(.05, (ts - (this.last || ts)) / 1000); this.last = ts;
+      if (Paused.on) { this.renderer.render(this.scene, this.camera); return; }
       this.step(dt * 1000); this.onFrame?.(dt);
       this.renderer.render(this.scene, this.camera);
     };

@@ -10,6 +10,7 @@ import { Ads } from '../core/ads';
 import { done } from '../core/flow';
 import { Score } from '../core/score';
 import { sfx } from '../core/sfx';
+import { Paused } from '../core/pause';
 import type { Game } from './registry';
 
 import { PAL, pixPic } from '../art/pixpics';
@@ -106,6 +107,7 @@ const Snake: Game & Record<string, any> = {
     if (this.dead) return;
     this.raf = requestAnimationFrame(t => this.loop(t));
     const dt = Math.min(.05, (ts - (this.last || ts)) / 1000); this.last = ts;
+    if (Paused.on) return;
     if (this.queue.length && (!this.runs.length || this.runs[this.runs.length - 1].s > 2.2)) this.spawn(this.queue.shift());
     const end = this.P.length - 1;
     for (const r of [...this.runs]) {

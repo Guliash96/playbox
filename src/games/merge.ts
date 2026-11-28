@@ -10,6 +10,7 @@ import { CHAINS, CRATE, harborScene, RESTORE, ensureHarborDefs } from '../art/ha
 import { Score } from '../core/score';
 import { t } from '../core/i18n';
 import { sfx } from '../core/sfx';
+import { Paused } from '../core/pause';
 import type { Game } from './registry';
 
 const COLS = 7, ROWS = 7, GEN = 3 * COLS + 3, EMAX = 40, EREGEN = 20_000;
@@ -34,7 +35,7 @@ const Merge: Game & Record<string, any> = {
     ensureHarborDefs();
     const s = store.get<any>('mg_state', null);
     if (s) { Object.assign(this, s); this.board = this.board.slice(0, COLS * ROWS); while (this.board.length < COLS * ROWS) this.board.push(null); } else this.fresh();
-    this.regen(); this.timer = setInterval(() => { this.regen(); this.hud(); }, 1000);
+    this.regen(); this.timer = setInterval(() => { if (Paused.on) return; this.regen(); this.hud(); }, 1000);
     this.render();
     setTools([['Енергія за рекламу', () => Ads.rewarded(() => { this.energy = Math.min(EMAX + 20, this.energy + 20); this.save(); this.hud(); })], ['Історія', () => this.story(false)]]);
     if (!s) this.story(false);

@@ -162,7 +162,7 @@ const Bus: Game & Record<string, any> = {
     const fin = () => { if (fired || this.gen !== gen) return; fired = true; onDone(); };
     g.people.forEach((i, j) => {
       const [ox, oz] = OFF[j]; const p: Pp = this.pp[i];
-      p.way = way.map(([x, z], n) => [x + ox * (n === way.length - 1 && !hideAtEnd ? 1 : .6), z + oz * .6]); p.hide = false;
+      p.way = way.map(([x, z], n) => [x + ox * (n === way.length - 1 && !hideAtEnd ? 1 : .6), z + oz * .6]); p.hide = false; (p as any).board = hideAtEnd;
       let d = 0, px = p.x, pz = p.z; for (const [x, z] of p.way) { d += Math.hypot(x - px, z - pz); px = x; pz = z; } far = Math.max(far, d);
       let mine = false; (p as any).done = () => { if (mine) return; mine = true; if (hideAtEnd) p.hide = true; if (--left === 0) fin(); };
     });
@@ -215,6 +215,8 @@ const Bus: Game & Record<string, any> = {
         if (d <= s) { p.x = tx; p.z = tz; p.way.shift(); if (!p.way.length) (p as any).done?.(), (p as any).done = null; }
         else { p.x += dx / d * s; p.z += dz / d * s; moving = true; }
       }
+      // a passenger who is boarding and has nowhere left to walk is inside the bus
+      if (!p.hide && (p as any).board && !p.way.length) { p.hide = true; const d = (p as any).done; (p as any).done = null; d?.(); }
       if (p.hide) { this.crowd.pose(i, 0, -50, 0, 0, .01); return; }
       const ry = moving ? Math.atan2(p.way[0] ? p.way[0][0] - p.x : 0, p.way[0] ? p.way[0][1] - p.z : 1) : Math.PI;
       this.crowd.pose(i, p.x, moving ? Math.abs(Math.sin(T * 14 + p.ph)) * .1 : Math.abs(Math.sin(T * 2 + p.ph)) * .02, p.z, ry, .62, moving ? .12 : 0);

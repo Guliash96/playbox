@@ -63,7 +63,7 @@ const Mahjong: Game & Record<string, any> = {
     // a few tiles start open so the first moves are not blind
     shuffle([...this.tiles.values()]).slice(0, Math.max(2, Math.round(pos.length * .12))).forEach((x: Tile) => { x.open = x.perm = true; });
     this.tray = [] as Tile[]; this.peek = null; this.busy = false; this.cont = false; this.auto = false; this.total = pos.length;
-    this.el.innerHTML = `<div class="mjwrap"><div class="tray">${range(SLOTS).map(() => '<i class="tslot"></i>').join('')}<div class="titems"></div></div><div class="mj"></div></div>`;
+    this.el.innerHTML = `<div class="mjwrap"><div class="tray">${range(SLOTS).map(() => '<i class="tslot"></i>').join('')}<div class="titems"></div></div><span class="prog"><i></i></span><div class="mj"></div></div>`;
     this.draw(); this.tools();
   },
   tools() {
@@ -101,7 +101,8 @@ const Mahjong: Game & Record<string, any> = {
   },
   hud() {
     const left = this.tiles.size + this.tray.length, pct = Math.round((1 - left / this.total) * 100);
-    setStats(`${pill('Рів. ' + this.lvl)}<span class="prog" title="${pct}%"><i style="width:${pct}%"></i></span>`);
+    setStats(pill('Рів. ' + this.lvl));
+    const pr = this.el.querySelector('.prog i') as HTMLElement; if (pr) pr.style.width = pct + '%';
   },
   el$(k: string) { return this.el.querySelector(`.tile[data-k="${k}"]`) as HTMLElement; },
   async tap(k: string) {
@@ -110,10 +111,9 @@ const Mahjong: Game & Record<string, any> = {
     if (!isFree(k, this.alive())) { haptic('err'); return flash(this.el$(k), 'shake'); }
     if (!x.open) {
       // flip: the previous peeked tile closes again (unless it is permanently open)
-      if (this.peek && this.peek !== x && !this.peek.perm) { this.peek.open = false; this.el$(this.peek.k)?.classList.remove('up', 'peek'); }
+      if (this.peek && this.peek !== x) { const pe = this.el$(this.peek.k); pe?.classList.remove('peek'); if (!this.peek.perm) { this.peek.open = false; pe?.classList.remove('up'); } }
       x.open = true; x.seen++; if (x.seen >= 3) x.perm = true;
-      this.peek = x; const e = this.el$(k); e.classList.add('up', 'peek'); haptic();
-      if (this.tray.some((y: Tile) => y.f === x.f)) { this.busy = true; await sleep(800); this.busy = false; if (this.tiles.get(k) === x) await this.toTray(x); }
+      this.peek = x; this.el$(k)?.classList.add('up', 'peek'); haptic();
       return;
     }
     await this.toTray(x);
@@ -121,7 +121,9 @@ const Mahjong: Game & Record<string, any> = {
   async toTray(x: Tile) {
     if (this.tray.length >= SLOTS) return;
     this.busy = true;
-    const e = this.el$(x.k), r0 = e.getBoundingClientRect(), slots = this.el.querySelectorAll('.tslot'), s = slots[this.tray.length].getBoundingClientRect();
+    const e = this.el$(x.k), slots = this.el.querySelectorAll('.tslot'), sl = slots[this.tray.length] as HTMLElement | undefined;
+    if (!sl) { this.busy = false; return; }
+    const s = sl.getBoundingClientRect(), r0 = e ? e.getBoundingClientRect() : s;
     this.tiles.delete(x.k); if (this.peek === x) this.peek = null;
     const fly = document.createElement('div'); fly.className = 'mjfly'; fly.innerHTML = mjFace(x.f);
     fly.style.cssText = `left:${r0.left}px;top:${r0.top}px;width:${r0.width}px;height:${r0.height}px`; document.body.appendChild(fly);
@@ -164,7 +166,18 @@ const Mahjong: Game & Record<string, any> = {
     if (!pick.length) return toast(t('Пар немає, перемішай'));
     pick.forEach(x => { const e = this.el$(x.k); e.classList.add('up', 'hint'); setTimeout(() => { if (!x.open) e?.classList.remove('up'); e?.classList.remove('hint'); }, 1600); });
   },
-  reshuffle() {
+  /** tiles fly together into a pile, get re-dealt, and fly back out to their places */
+  async reshuffle() {
+    if (this.busy) return; this.busy = true;
+    const mj = this.el.querySelector('.mj') as HTMLElement, c = mj.getBoundingClientRect(), cx = c.left + c.width / 2, cy = c.top + c.height / 2;
+    const toC = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return `translate(${cx - r.left - r.width / 2}px,${cy - r.top - r.height / 2}px) rotate(${(Math.random() - .5) * 40}deg)`; };
+    await Promise.all([...mj.querySelectorAll<HTMLElement>('.tile')].map((el, i) => el.animate([{ transform: 'none' }, { transform: toC(el) }], { duration: 320, delay: i * 4, easing: 'cubic-bezier(.5,0,.8,.4)', fill: 'forwards' }).finished.catch(() => { })));
+    if (this.dead) return;
+    this.deal(); haptic();
+    await Promise.all([...mj.querySelectorAll<HTMLElement>('.tile')].map((el, i) => el.animate([{ transform: toC(el) }, { transform: 'none' }], { duration: 380, delay: i * 5, easing: 'cubic-bezier(.2,.8,.3,1.2)', fill: 'backwards' }).finished.catch(() => { })));
+    this.busy = false; toast(t('Перемішано'));
+  },
+  deal() {
     const keys = [...this.tiles.keys()], cnt: Record<number, number> = {};
     keys.forEach(k => cnt[this.tiles.get(k).f] = (cnt[this.tiles.get(k).f] || 0) + 1);
     // faces whose twin sits in the tray stay single; the rest are re-dealt in solvable pairs
@@ -172,7 +185,7 @@ const Mahjong: Game & Record<string, any> = {
     for (const f in cnt) { let n = cnt[f]; if (n % 2) { singles.push(+f); n--; } for (let i = 0; i < n / 2; i++) pairs.push(+f); }
     const pk = shuffle(keys.slice()), sk = pk.splice(0, singles.length), fa = assign(pk, pairs);
     sk.forEach((k, i) => this.tiles.get(k).f = singles[i]); pk.forEach(k => this.tiles.get(k).f = fa[k]);
-    this.tiles.forEach((x: Tile) => { if (!x.perm) x.open = false; }); this.peek = null; this.draw(); toast(t('Перемішано'));
+    this.tiles.forEach((x: Tile) => { if (!x.perm) x.open = false; }); this.peek = null; this.draw();
   },
 };
 export default Mahjong;

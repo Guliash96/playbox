@@ -37,3 +37,4 @@
 .tslot{background:rgba(110,60,10,.45)!important}
 .prog{display:inline-block;width:92px;height:16px;border-radius:99px;border:2px solid #1b1b1f;background:#0b3f2c;overflow:hidden;position:relative}
 .prog i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(#9ff59a,#2fbf71);border-radius:99px;transition:width .4s ease}
+.mjwrap .prog{width:min(240px,60vw);height:14px;margin-top:-10px;flex:none}
