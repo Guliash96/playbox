@@ -153,3 +153,21 @@ insert into public.bad_words (w) values
   ('caralho'),('buceta'),('viado'),('filhodaputa'),
   ('salope'),('connard'),('encule'),('enculé')
 on conflict do nothing;
+
+-- cloud save: progress (levels, crystals, boosters, records) follows the account
+create table if not exists public.saves (
+  player_id uuid primary key references auth.users(id) on delete cascade,
+  data jsonb not null default '{}'::jsonb, ts jsonb not null default '{}'::jsonb, updated_at timestamptz not null default now());
+alter table public.saves enable row level security;
+create or replace function public.get_save() returns table (data jsonb, ts jsonb)
+language sql stable security definer set search_path = public as $$ select s.data, s.ts from saves s where s.player_id = auth.uid(); $$;
+create or replace function public.put_save(d jsonb, t jsonb) returns boolean
+language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null or pg_column_size(d) > 200000 then return false; end if;
+  insert into saves (player_id, data, ts, updated_at) values (auth.uid(), d, t, now())
+  on conflict (player_id) do update set data = excluded.data, ts = excluded.ts, updated_at = now();
+  return true;
+end $$;
+grant execute on function public.get_save(), public.put_save(jsonb, jsonb) to anon, authenticated;
+alter table public.bug_reports add column if not exists fixed_at timestamptz;
