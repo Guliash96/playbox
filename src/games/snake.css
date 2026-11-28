@@ -42,3 +42,8 @@
 
 .track i.popped{animation:snPop .35s ease-in forwards}
 @keyframes snPop{40%{scale:1.35;filter:brightness(1.4)}100%{scale:.1;opacity:0}}
+@media (min-width:600px){
+.nslot{width:62px;height:62px}
+.coil{width:66px;height:66px}.coil b{left:18px;top:28px;width:30px;height:24px;font-size:16px;line-height:20px}
+.coil.sm{width:44px;height:44px}.coil.sm b{left:11px;top:18px;width:22px;height:17px;font-size:12px;line-height:13px}
+}

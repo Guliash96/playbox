@@ -33,8 +33,11 @@ const headSVG = (col: string) => { const d = shade(col, -.35), l = shade(col, .4
 
 const Snake: Game & Record<string, any> = {
   title: 'Пікс-змійки', theme: 'th-snake',
-  start(el: HTMLElement) { this.el = el; this.load(); },
-  stop() { this.dead = true; cancelAnimationFrame(this.raf); },
+  start(el: HTMLElement) {
+    this.el = el; this.load();
+    let w0 = 0, h0 = 0; this.ro = new ResizeObserver(() => { const w = el.clientWidth, h = el.clientHeight; if (Math.abs(w - w0) > 4 || Math.abs(h - h0) > 4) { w0 = w; h0 = h; if (this.g) this.layout(); } }); this.ro.observe(el);
+  },
+  stop() { this.dead = true; cancelAnimationFrame(this.raf); this.ro?.disconnect(); },
   load() {
     cancelAnimationFrame(this.raf);
     const L = this.lvl = store.get('sn_lvl', 1); this.dead = false; this.over = false;
@@ -53,7 +56,8 @@ const Snake: Game & Record<string, any> = {
     setTools([['i:restart', () => { Score.lose(); this.load(); }]]);
   },
   layout() {
-    const W = this.W, H = this.H, cs = this.cs = Math.floor(Math.min(this.el.clientWidth - 20, (this.el.clientHeight - 200)) / (W + 2));
+    const W = this.W, H = this.H, q = (this.el.querySelector('.nest')?.offsetHeight || 60) + (this.el.querySelector('.lanes')?.offsetHeight || 130) + 40,
+      cs = this.cs = Math.max(6, Math.floor(Math.min((this.el.clientWidth - 16) / (W + 2), (this.el.clientHeight - q) / (H + 2)) * 2) / 2);
     const px = this.el.querySelector('.px'); px.style.cssText = `width:${(W + 2) * cs}px;height:${(H + 2) * cs}px;--cs:${cs}px`;
     this.el.querySelector('.belt').innerHTML = `<rect x="${cs / 2}" y="${cs / 2}" width="${(W + 1) * cs}" height="${(H + 1) * cs}" rx="${cs * .6}" fill="none" stroke="#5a4c9c" stroke-width="${cs * .86}"/><rect x="${cs / 2}" y="${cs / 2}" width="${(W + 1) * cs}" height="${(H + 1) * cs}" rx="${cs * .6}" fill="none" stroke="#fff" stroke-opacity=".18" stroke-width="2" stroke-dasharray="${cs * .3} ${cs * .4}" class="beltdash"/><g transform="translate(${cs / 2} ${(H + 1.5) * cs})"><circle r="${cs * .55}" fill="#ffd23f" stroke="#1b1b1f" stroke-width="2"/><path d="M${-cs * .22} ${cs * .1}a${cs * .25} ${cs * .25} 0 1 1 ${cs * .1} ${cs * .18}" fill="none" stroke="#1b1b1f" stroke-width="2.4" stroke-linecap="round"/><path d="M${-cs * .3} ${cs * .02}l${cs * .08} ${cs * .14} ${cs * .12} -${cs * .08}" fill="none" stroke="#1b1b1f" stroke-width="2.4" stroke-linecap="round"/></g>`;
     this.el.querySelector('.bricks').innerHTML = this.g.map((c: string, i: number) => c ? `<i data-i="${i}" style="left:${(i % W + 1) * cs}px;top:${(Math.floor(i / W) + 1) * cs}px;--c:${shade(PAL[c], this.jit[i])}"></i>` : '').join('');
